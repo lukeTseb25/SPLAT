@@ -37,7 +37,7 @@ SAMPLE_RATE = 250  # Hz
 EEG_CHANNELS = ["CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7", "CH8"]
 
 # Motor Imagery Experiment Parameters
-NUM_TRIALS = 60  # Configurable number of trials
+NUM_TRIALS = 6  # Configurable number of trials
 INSTRUCTION_DURATION = 2.0  # seconds to show left/right instruction
 IMAGERY_DURATION = 3.0  # seconds for motor imagery
 INTER_TRIAL_INTERVAL = 3.0  # seconds between trials
@@ -47,6 +47,7 @@ MARKER_RIGHT = "1"  # right arm imagery
 MARKER_LEFT = "2"   # left arm imagery
 MARKER_LEG = "3"   # leg imagery
 MARKER_STOP = "4"   # end of imagery period
+MARKER_FAIL = "5"   # end of imagery period
 
 # File/directories
 RAW_DATA_DIR = "./data/raw"
@@ -237,6 +238,7 @@ def run_motor_imagery_experiment():
         if limb == "right arm": marker_val = MARKER_RIGHT 
         elif limb == "left arm": marker_val = MARKER_LEFT
         elif limb == "right leg": marker_val = MARKER_LEG
+        else: marker_val = MARKER_FAIL
         win.callOnFlip(lambda m=marker_val: marker_outlet.push_sample([m]))
         win.flip()
         core.wait(0.25)
