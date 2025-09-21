@@ -4,7 +4,7 @@
 Motor Imagery EEG Data Collection Script
 
 This script implements a motor imagery experiment using PsychoPy and LSL integration.
-It presents instructions for left/right hand motor imagery and records EEG data
+It presents instructions for left/right arm and right leg motor imagery and records EEG data
 with precise timing markers.
 
 Requirements:
@@ -37,15 +37,16 @@ SAMPLE_RATE = 250  # Hz
 EEG_CHANNELS = ["CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7", "CH8"]
 
 # Motor Imagery Experiment Parameters
-NUM_TRIALS = 40  # Configurable number of trials
+NUM_TRIALS = 60  # Configurable number of trials
 INSTRUCTION_DURATION = 2.0  # seconds to show left/right instruction
 IMAGERY_DURATION = 3.0  # seconds for motor imagery
 INTER_TRIAL_INTERVAL = 3.0  # seconds between trials
 
 # Marker values
-MARKER_RIGHT = "1"  # right hand imagery
-MARKER_LEFT = "2"   # left hand imagery
-MARKER_STOP = "3"   # end of imagery period
+MARKER_RIGHT = "1"  # right arm imagery
+MARKER_LEFT = "2"   # left arm imagery
+MARKER_LEG = "3"   # leg imagery
+MARKER_STOP = "4"   # end of imagery period
 
 # File/directories
 RAW_DATA_DIR = "./data/raw"
@@ -207,24 +208,24 @@ def run_motor_imagery_experiment():
     ready_text = visual.TextStim(win, text="Get Ready", height=0.15, color="white")
 
     # Generate randomized trial list
-    trials = ["right", "left"] * (NUM_TRIALS // 2)
+    trials = ["right arm", "left arm", "right leg"] * (NUM_TRIALS // 3)
     random.shuffle(trials)
     
     # Show initial instructions
-    instruction_text.text = "Motor Imagery Experiment\n\nImagine moving your hand when instructed\n\nPress SPACE to begin"
+    instruction_text.text = "Motor Imagery Experiment\n\nImagine moving your limb when instructed\n\nPress SPACE to begin"
     instruction_text.draw()
     win.flip()
     event.waitKeys(keyList=["space"])
 
     # Main experiment loop
-    for trial_num, hand in enumerate(trials, 1):
+    for trial_num, limb in enumerate(trials, 1):
         # Display get ready message
         ready_text.draw()
         win.flip()
         core.wait(1.0)
         
-        # Show instruction (right or left hand)
-        instruction_text.text = f"{hand.upper()} HAND"
+        # Show instruction (limb)
+        instruction_text.text = f"{limb.upper()}"
         instruction_text.draw()
         win.flip()
         core.wait(INSTRUCTION_DURATION)
@@ -233,7 +234,9 @@ def run_motor_imagery_experiment():
         instruction_text.text = "START"
         instruction_text.draw()
         # Schedule marker to be sent on next flip
-        marker_val = MARKER_RIGHT if hand == "right" else MARKER_LEFT
+        if limb == "right arm": marker_val = MARKER_RIGHT 
+        elif limb == "left arm": marker_val = MARKER_LEFT
+        elif limb == "right leg": marker_val = MARKER_LEG
         win.callOnFlip(lambda m=marker_val: marker_outlet.push_sample([m]))
         win.flip()
         core.wait(0.25)
@@ -255,7 +258,7 @@ def run_motor_imagery_experiment():
         win.flip()  # clear screen
         core.wait(INTER_TRIAL_INTERVAL)
         
-        logging.info(f"Completed trial {trial_num}/{len(trials)}: {hand} hand")
+        logging.info(f"Completed trial {trial_num}/{len(trials)}: {limb}")
         
         # Check for quit
         if event.getKeys(keyList=["escape"]):
