@@ -54,7 +54,7 @@ RAW_DATA_DIR = "./data/raw"
 os.makedirs(RAW_DATA_DIR, exist_ok=True)
 
 # Data collection parameters
-MERGE_THRESHOLD = 0.005  # seconds threshold for aligning EEG and marker timestamps
+MERGE_THRESHOLD = 0.002  # seconds threshold for aligning EEG and marker timestamps
 POLL_SLEEP = 0.001      # sleep time between polls in collector loop
 
 ###############################################################################
