@@ -37,7 +37,7 @@ SAMPLE_RATE = 250  # Hz
 EEG_CHANNELS = ["CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7", "CH8"]
 
 # Motor Imagery Experiment Parameters
-NUM_TRIALS = 6  # Configurable number of trials
+NUM_TRIALS = 102  # Configurable number of trials
 INSTRUCTION_DURATION = 2.0  # seconds to show left/right instruction
 IMAGERY_DURATION = 3.0  # seconds for motor imagery
 INTER_TRIAL_INTERVAL = 3.0  # seconds between trials
@@ -47,14 +47,14 @@ MARKER_RIGHT = "1"  # right arm imagery
 MARKER_LEFT = "2"   # left arm imagery
 MARKER_LEG = "3"   # leg imagery
 MARKER_STOP = "4"   # end of imagery period
-MARKER_FAIL = "5"   # end of imagery period
+MARKER_FAIL = "5"   # failed to add marker
 
 # File/directories
 RAW_DATA_DIR = "./data/raw"
 os.makedirs(RAW_DATA_DIR, exist_ok=True)
 
 # Data collection parameters
-MERGE_THRESHOLD = 0.02  # seconds threshold for aligning EEG and marker timestamps
+MERGE_THRESHOLD = 0.005  # seconds threshold for aligning EEG and marker timestamps
 POLL_SLEEP = 0.001      # sleep time between polls in collector loop
 
 ###############################################################################
