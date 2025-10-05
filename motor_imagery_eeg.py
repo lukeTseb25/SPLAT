@@ -4,7 +4,7 @@
 Motor Imagery EEG Data Collection Script
 
 This script implements a motor imagery experiment using PsychoPy and LSL integration.
-It presents instructions for left/right arm and right leg motor imagery and records EEG data
+It presents instructions for left/right hand motor imagery and records EEG data
 with precise timing markers.
 
 Requirements:
@@ -225,7 +225,7 @@ def run_motor_imagery_experiment():
         win.flip()
         core.wait(1.0)
         
-        # Show instruction (limb)
+        # Show instruction (right or left hand)
         instruction_text.text = f"{limb.upper()}"
         instruction_text.draw()
         win.flip()
@@ -235,6 +235,8 @@ def run_motor_imagery_experiment():
         instruction_text.text = "START"
         instruction_text.draw()
         # Schedule marker to be sent on next flip
+
+        #BIG CHANGE ALERT
         if limb == "right arm": marker_val = MARKER_RIGHT 
         elif limb == "left arm": marker_val = MARKER_LEFT
         elif limb == "right leg": marker_val = MARKER_LEG
