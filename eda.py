@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import scipy.signal
+import os
+import math
 
 # ======================
 # --- Existing params ---
@@ -63,7 +65,7 @@ def read_eeg_csv(filepath):
     df = pd.read_csv(filepath)
     time = df.iloc[:, 0].values
     eeg_data = df.iloc[:, 1:NUM_CHANNELS+1].values
-    markers = df.iloc[:, -1].values.astype(int)
+    markers = [int(num) if num is not None and not math.isnan(num) else 0 for num in df.iloc[:, -1]]
     return time, eeg_data, markers
 
 def extract_trials(time, eeg_data, markers):
@@ -76,14 +78,16 @@ def extract_trials(time, eeg_data, markers):
     """
     trials = []
     freqs, freq_mask = get_frequency_mask(FREQ_LOW, FREQ_HIGH, NFFT, FS)
-    indices = np.where(markers != '')[0]
-    for i in range(len(indices)):
-        start_marker = markers[idx]
-        # find nearest following 4 marker
-        
-        if len(end_candidates) == 0:
-            continue
-        end_idx = start_idx + end_candidates[0]
+    #indices = [i for i, elem in enumerate(markers) if elem != 0]
+    indices = []
+    for i in range(1, len(markers)):
+        if markers[i] in [1,2,3,4]:
+            indices.append(i)
+    for i in range(len(indices)-1):
+        start_idx = indices[i]
+        end_idx = indices[i+1]
+        start_marker = markers[start_idx]
+        end_marker = markers[end_idx]
         segment = eeg_data[start_idx:end_idx]
         time_segment = time[start_idx:end_idx]
         spectrogram = compute_time_frequency_tensor(segment,
@@ -136,7 +140,8 @@ def plot_trial(trials, trial_number, channel_idx, freqs):
 # trials, freqs = extract_trials(time, eeg_data, markers)
 # plot_trial(trials, trial_number=0, channel_idx=5, freqs=freqs)
 
-filepath = "..\\data\\raw\\MI_EEG_20251005_171205_Session1LS.csv"
-time, eeg_data, markers = read_eeg_csv("your_file.csv")
+filename = "MI_EEG_20251005_171205_Session1LS.csv"
+filepath = os.path.abspath(os.path.join("data", "raw", filename))
+time, eeg_data, markers = read_eeg_csv(filepath)
 trials, freqs = extract_trials(time, eeg_data, markers)
 plot_trial(trials, trial_number=0, channel_idx=5, freqs=freqs)
