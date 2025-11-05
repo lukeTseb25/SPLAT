@@ -78,13 +78,11 @@ def extract_trials(time, eeg_data, markers):
     """
     trials = []
     freqs, freq_mask = get_frequency_mask(FREQ_LOW, FREQ_HIGH, NFFT, FS)
-    #indices = [i for i, elem in enumerate(markers) if elem != 0]
     indices = []
     for i in range(1, len(markers)):
         if markers[i] in [1,2,3,4]:
             indices.append(i)
-    #for i in range(len(indices)-1):
-    for i in range(4):
+    for i in range(len(indices)-1):
         start_idx = indices[i]
         end_idx = indices[i+1]
         start_marker = markers[start_idx]
@@ -145,7 +143,7 @@ def plot_trial(trials, trial_number, channel, freqs, window=(0.0,0.0)):
     axs[0].plot(time_segment, segment[:, channel_idx])
     axs[0].set_title("Time Series")
     axs[0].set_xlabel("Time (s)")
-    axs[0].set_ylabel("Voltage (µV)")
+    axs[0].set_ylabel("Voltage (dB)")
 
     # --- Time-frequency ---
     tf_data = spectrogram[:, :, channel_idx].T  # shape: (freq_bins, time_frames)
@@ -156,7 +154,7 @@ def plot_trial(trials, trial_number, channel, freqs, window=(0.0,0.0)):
     axs[1].set_title("Time-Frequency (Spectrogram)")
     axs[1].set_xlabel("Time (s)")
     axs[1].set_ylabel("Frequency (Hz)")
-    fig.colorbar(im, ax=axs[1], label="Magnitude")
+    fig.colorbar(im, ax=axs[1], label="Magnitude (dB)")
 
     plt.tight_layout()
     plt.show()
@@ -188,3 +186,19 @@ plot_trial(trials, trial_number=2, channel=5, freqs=freqs,window=(2.5,4))
 plot_trial(trials, trial_number=2, channel=6, freqs=freqs,window=(2.5,4))
 plot_trial(trials, trial_number=2, channel=7, freqs=freqs,window=(2.5,4))
 plot_trial(trials, trial_number=2, channel=8, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=21, channel=1, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=21, channel=2, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=21, channel=3, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=21, channel=4, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=21, channel=5, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=21, channel=6, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=21, channel=7, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=21, channel=8, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=22, channel=1, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=22, channel=2, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=22, channel=3, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=22, channel=4, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=22, channel=5, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=22, channel=6, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=22, channel=7, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=22, channel=8, freqs=freqs,window=(2.5,4))
