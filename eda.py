@@ -83,25 +83,43 @@ def extract_trials(time, eeg_data, markers):
     for i in range(1, len(markers)):
         if markers[i] in [1,2,3,4]:
             indices.append(i)
-    for i in range(len(indices)-1):
+    #for i in range(len(indices)-1):
+    for i in range(4):
         start_idx = indices[i]
         end_idx = indices[i+1]
         start_marker = markers[start_idx]
-        end_marker = markers[end_idx]
         segment = eeg_data[start_idx:end_idx]
         time_segment = time[start_idx:end_idx]
+
+        #Convert all the elements of segment from microvolts to volts
+        segment = segment * 1e-6
+
+        #Perform bandpass using butterworth filter
+        N, Wn = scipy.signal.buttord([FREQ_LOW, FREQ_HIGH], [FREQ_LOW-2, FREQ_HIGH+2], 3, 40, fs=FS)
+        sos = scipy.signal.butter(N, Wn, btype='bandpass', output='sos', fs=FS)
+        for ch in range(segment.shape[1]):
+            segment[:, ch] = scipy.signal.sosfiltfilt(sos, segment[:, ch])
+        
         spectrogram = compute_time_frequency_tensor(segment,
                                                     WINDOW_SIZE_SAMPLES,
                                                     STEP_SIZE_SAMPLES,
                                                     NFFT,
                                                     freq_mask)
+        
+        #Convert from volts to decibels
+        segment = 20 * np.log10(np.abs(segment) + 1e-12)
+        spectrogram = 20 * np.log10(np.abs(spectrogram) + 1e-12)
+
+        #Make time relative to start of trial
+        time_segment = time_segment - time_segment[0]
+
         trials.append((start_marker, time_segment, segment, spectrogram))
     return trials, freqs[freq_mask]
 
 # =======================
 # --- Plotting helpers ---
 # =======================
-def plot_trial(trials, trial_number, channel_idx, freqs):
+def plot_trial(trials, trial_number, channel, freqs, window=(0.0,0.0)):
     """
     Plots time-series and time-frequency for a given trial and channel.
     """
@@ -110,10 +128,20 @@ def plot_trial(trials, trial_number, channel_idx, freqs):
         return
 
     start_marker, time_segment, segment, spectrogram = trials[trial_number]
+
+    #Grab a section of the trial if window is specified
+    if window != (0.0,0.0):
+        start_time, end_time = window
+        mask = (time_segment >= start_time) & (time_segment <= end_time)
+        time_segment = time_segment[mask]
+        segment = segment[mask, :]
+        spectrogram = spectrogram[np.where((time_segment >= start_time) & (time_segment <= end_time))[0], :, :]
+    
     fig, axs = plt.subplots(2, 1, figsize=(10, 8))
-    fig.suptitle(f"Trial {trial_number} | Marker {start_marker} | Channel {channel_idx}")
+    fig.suptitle(f"Trial {trial_number} | Marker {start_marker} | Channel {channel}")
 
     # --- Time series ---
+    channel_idx = channel - 1  # zero-based index
     axs[0].plot(time_segment, segment[:, channel_idx])
     axs[0].set_title("Time Series")
     axs[0].set_xlabel("Time (s)")
@@ -144,4 +172,19 @@ filename = "MI_EEG_20251005_171205_Session1LS.csv"
 filepath = os.path.abspath(os.path.join("data", "raw", filename))
 time, eeg_data, markers = read_eeg_csv(filepath)
 trials, freqs = extract_trials(time, eeg_data, markers)
-plot_trial(trials, trial_number=0, channel_idx=5, freqs=freqs)
+plot_trial(trials, trial_number=1, channel=1, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=1, channel=2, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=1, channel=3, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=1, channel=4, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=1, channel=5, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=1, channel=6, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=1, channel=7, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=1, channel=8, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=2, channel=1, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=2, channel=2, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=2, channel=3, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=2, channel=4, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=2, channel=5, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=2, channel=6, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=2, channel=7, freqs=freqs,window=(2.5,4))
+plot_trial(trials, trial_number=2, channel=8, freqs=freqs,window=(2.5,4))
