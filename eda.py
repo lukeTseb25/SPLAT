@@ -66,6 +66,7 @@ def read_eeg_csv(filepath):
     df = pd.read_csv(filepath)
     time = df.iloc[:, 0].values
     eeg_data = df.iloc[:, 1:NUM_CHANNELS+1].values
+    eeg_data = eeg_data[~np.isnan(eeg_data).any(axis=1)]
     markers = [int(num) if num is not None and not math.isnan(num) else 0 for num in df.iloc[:, -1]]
     return time, eeg_data, markers
 
@@ -84,7 +85,7 @@ def extract_trials(time, eeg_data, markers):
         if markers[i] in [1,2,3,4]:
             indices.append(i)
     # for i in range(len(indices)-1):
-    for i in range(23):
+    for i in range(5):
         start_idx = indices[i]
         end_idx = indices[i+1]
         start_marker = markers[start_idx]
@@ -179,34 +180,6 @@ filepath = os.path.abspath(os.path.join("data", "raw", filename))
 time, eeg_data, markers = read_eeg_csv(filepath)
 trials, freqs = extract_trials(time, eeg_data, markers)
 plot_trial(trials, trial_number=1, channel=1, freqs=freqs)
-plot_trial(trials, trial_number=1, channel=2, freqs=freqs)
-plot_trial(trials, trial_number=1, channel=3, freqs=freqs)
-plot_trial(trials, trial_number=1, channel=4, freqs=freqs)
-plot_trial(trials, trial_number=1, channel=5, freqs=freqs)
-plot_trial(trials, trial_number=1, channel=6, freqs=freqs)
-plot_trial(trials, trial_number=1, channel=7, freqs=freqs)
-plot_trial(trials, trial_number=1, channel=8, freqs=freqs)
 plot_trial(trials, trial_number=2, channel=1, freqs=freqs)
-plot_trial(trials, trial_number=2, channel=2, freqs=freqs)
-plot_trial(trials, trial_number=2, channel=3, freqs=freqs)
-plot_trial(trials, trial_number=2, channel=4, freqs=freqs)
-plot_trial(trials, trial_number=2, channel=5, freqs=freqs)
-plot_trial(trials, trial_number=2, channel=6, freqs=freqs)
-plot_trial(trials, trial_number=2, channel=7, freqs=freqs)
-plot_trial(trials, trial_number=2, channel=8, freqs=freqs)
-plot_trial(trials, trial_number=21, channel=1, freqs=freqs)
-plot_trial(trials, trial_number=21, channel=2, freqs=freqs)
-plot_trial(trials, trial_number=21, channel=3, freqs=freqs)
-plot_trial(trials, trial_number=21, channel=4, freqs=freqs)
-plot_trial(trials, trial_number=21, channel=5, freqs=freqs)
-plot_trial(trials, trial_number=21, channel=6, freqs=freqs)
-plot_trial(trials, trial_number=21, channel=7, freqs=freqs)
-plot_trial(trials, trial_number=21, channel=8, freqs=freqs)
-plot_trial(trials, trial_number=22, channel=1, freqs=freqs)
-plot_trial(trials, trial_number=22, channel=2, freqs=freqs)
-plot_trial(trials, trial_number=22, channel=3, freqs=freqs)
-plot_trial(trials, trial_number=22, channel=4, freqs=freqs)
-plot_trial(trials, trial_number=22, channel=5, freqs=freqs)
-plot_trial(trials, trial_number=22, channel=6, freqs=freqs)
-plot_trial(trials, trial_number=22, channel=7, freqs=freqs)
-plot_trial(trials, trial_number=22, channel=8, freqs=freqs)
+plot_trial(trials, trial_number=3, channel=1, freqs=freqs)
+plot_trial(trials, trial_number=4, channel=1, freqs=freqs)
