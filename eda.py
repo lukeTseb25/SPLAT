@@ -66,6 +66,7 @@ def read_eeg_csv(filepath):
     df = pd.read_csv(filepath)
     time = df.iloc[:, 0].values
     eeg_data = df.iloc[:, 1:NUM_CHANNELS+1].values
+    eeg_data = eeg_data[~np.isnan(eeg_data).any(axis=1)]
     markers = [int(num) if num is not None and not math.isnan(num) else 0 for num in df.iloc[:, -1]]
     return time, eeg_data, markers
 
