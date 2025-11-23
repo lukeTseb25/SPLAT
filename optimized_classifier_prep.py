@@ -93,6 +93,8 @@ def preprocess_data(stop_event, times:deque, eeg_data:deque, markers:deque=None,
 
     Optimized: incremental filtering + cached FFT frames keyed by absolute start index so FFT work for
     overlapping frames is reused instead of recomputing identical windows.
+    
+    Buffers are kept sorted chronologically by times at each iteration.
     """
     
     segments = []
@@ -105,12 +107,46 @@ def preprocess_data(stop_event, times:deque, eeg_data:deque, markers:deque=None,
     # Prepare incremental filtered buffer and per-channel filter states (zi)
     filtered_buffer = deque()  # stores filtered samples as rows [num_samples, num_channels]
     num_channels = NUM_CHANNELS
-    zi_per_channel = [scipy.signal.sosfilt_zi(sos) * 0.0 for _ in range(num_channels)]  # will be initialized when first sample seen
+    zi_per_channel = [scipy.signal.sosfilt_zi(sos) * 0.0 for _ in range(num_channels)]
 
     # Cache for FFT frames: maps absolute_start_sample_index -> magnitude array shape (freq_bins, num_channels)
     fft_cache = {}
     # Track how many samples have been popped from the left (absolute offset of filtered_buffer[0])
     sample_offset = 0
+
+    import itertools
+
+    def _sort_buffers():
+        """
+        Sorts times, eeg_data, and markers (if present) chronologically based on times.
+        Maintains synchronization across all three buffers.
+        """
+        if len(times) == 0:
+            return
+        
+        # Convert deques to lists, get sort indices
+        times_list = list(times)
+        eeg_data_list = list(eeg_data)
+        markers_list = list(markers) if markers is not None else None
+        
+        # Get indices that would sort times
+        sort_indices = np.argsort(times_list)
+        
+        # Sort all buffers by the same indices
+        times_sorted = [times_list[i] for i in sort_indices]
+        eeg_data_sorted = [eeg_data_list[i] for i in sort_indices]
+        markers_sorted = [markers_list[i] for i in sort_indices] if markers_list is not None else None
+        
+        # Clear and repopulate deques
+        times.clear()
+        eeg_data.clear()
+        if markers is not None:
+            markers.clear()
+        
+        times.extend(times_sorted)
+        eeg_data.extend(eeg_data_sorted)
+        if markers is not None:
+            markers.extend(markers_sorted)
 
     def _append_new_raw_and_filter():
         """
@@ -172,16 +208,13 @@ def preprocess_data(stop_event, times:deque, eeg_data:deque, markers:deque=None,
         # resulting shape (num_channels, freq_bins) -> transpose to (freq_bins, num_channels)
         return np.stack(magnitudes, axis=1)  # (window_freq_bins, num_channels)
 
-    import itertools
-
-    # Local helpers for both marked and unmarked flows (they share caching logic)
     def _produce_segments_from_current_buffer(collected_marker=None):
         nonlocal sample_offset, fft_cache
         # Ensure filtered_buffer is long enough
         total_needed = CLASSIFICATION_WINDOW_SAMPLES + CLASSIFICATION_FILTERING_PADDING_SAMPLES * 2
         if len(filtered_buffer) < total_needed or len(times) < total_needed:
             return False  # not ready
-
+        
         # Get full (with padding) segment from filtered_buffer (do not pop yet)
         # We will compute frames for the windowed_segment (no padding)
         windowed_start = CLASSIFICATION_FILTERING_PADDING_SAMPLES
@@ -234,6 +267,9 @@ def preprocess_data(stop_event, times:deque, eeg_data:deque, markers:deque=None,
         while not stop_event.is_set() or (
             len(eeg_data) >= CLASSIFICATION_WINDOW_SAMPLES + CLASSIFICATION_FILTERING_PADDING_SAMPLES*2 and len(times) >= CLASSIFICATION_WINDOW_SAMPLES + CLASSIFICATION_FILTERING_PADDING_SAMPLES*2
         ):
+            # Sort buffers chronologically
+            _sort_buffers()
+            
             # Add any newly appended raw samples to filtered_buffer
             _append_new_raw_and_filter()
 
@@ -273,6 +309,9 @@ def preprocess_data(stop_event, times:deque, eeg_data:deque, markers:deque=None,
         while not stop_event.is_set() or (
             len(eeg_data) >= required_buffer_size and len(markers) >= required_buffer_size and len(times) >= required_buffer_size
         ):
+            # Sort buffers chronologically
+            _sort_buffers()
+            
             # fill filtered buffer from any new raw samples
             _append_new_raw_and_filter()
 
