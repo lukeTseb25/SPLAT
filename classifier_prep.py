@@ -8,6 +8,9 @@ import threading
 import time
 from collections import deque
 
+#TODO: Make 7-10x faster by using overlap-add FFT method 
+# so we can do live processing with high enough detail for classification ;-;
+
 # Parameters
 FS = 250
 NUM_CHANNELS = 8
@@ -21,8 +24,8 @@ FFT_STEP_SIZE_SAMPLES = int(FFT_STEP_SIZE_SEC * FS)
 NFFT = 256
 CLASSIFICATION_WINDOW_SEC = 0.5
 CLASSIFICATION_WINDOW_SAMPLES = int(CLASSIFICATION_WINDOW_SEC * FS)
-# CLASSIFICATION_WINDOW_STEP_SEC = 1.0/FS
-CLASSIFICATION_WINDOW_STEP_SEC = 1.0
+CLASSIFICATION_WINDOW_STEP_SEC = 1.0/FS
+# CLASSIFICATION_WINDOW_STEP_SEC = 1.0
 CLASSIFICATION_WINDOW_STEP_SAMPLES = int(CLASSIFICATION_WINDOW_STEP_SEC * FS)
 CLASSIFICATION_MARKER_TIME_THRESHOLD_SEC = 0.5
 CLASSIFICATION_MARKER_TIME_THRESHOLD_SAMPLES = int(CLASSIFICATION_MARKER_TIME_THRESHOLD_SEC * FS)
@@ -151,8 +154,8 @@ def preprocess_data(stop_event, times:deque, eeg_data:deque, markers:deque=None,
                         collected_marker=markers[i]
                         rel_last_marker_pos=i
 
-                #If marker is outside threshold segment data as usual
-                if rel_last_marker_pos < -CLASSIFICATION_MARKER_TIME_THRESHOLD_SAMPLES or rel_last_marker_pos > required_buffer_size:
+                #If marker is outside threshold and data is marked segment data as usual
+                if collected_marker is not None and (rel_last_marker_pos < -CLASSIFICATION_MARKER_TIME_THRESHOLD_SAMPLES or rel_last_marker_pos > required_buffer_size):
                     #Get segment including padding
                     segment = np.array(eeg_data)[:CLASSIFICATION_WINDOW_SAMPLES+CLASSIFICATION_FILTERING_PADDING_SAMPLES*2]
 
