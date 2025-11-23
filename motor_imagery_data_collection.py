@@ -37,7 +37,7 @@ SAMPLE_RATE = 250  # Hz
 EEG_CHANNELS = ["CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7", "CH8"]
 
 # Motor Imagery Experiment Parameters
-NUM_TRIALS = 102  # Configurable number of trials
+NUM_TRIALS = 3  # Configurable number of trials
 INSTRUCTION_DURATION = 2.0  # seconds to show left/right instruction
 IMAGERY_DURATION = 3.0  # seconds for motor imagery
 INTER_TRIAL_INTERVAL = 3.0  # seconds between trials
