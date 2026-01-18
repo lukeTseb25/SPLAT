@@ -7,6 +7,7 @@ import sys
 import threading
 import time
 from collections import deque
+import pickle
 
 # Parameters
 FS = 250
@@ -76,10 +77,6 @@ def read_eeg_csv(filepath, times, eeg_data, markers):
     eeg_data_list = eeg_data_list[~np.isnan(eeg_data_list).any(axis=1)]
     markers_list = [int(num) if num is not None and not math.isnan(num) else 0 for num in df.iloc[:, -1]]
 
-    times_list = times_list[:6000]
-    eeg_data_list = eeg_data_list[:6000]
-    markers_list = markers_list[:6000]
-
     #Convert to deques for thread-safe appending/popping
     times.extend(times_list)
     eeg_data.extend(eeg_data_list)
@@ -116,37 +113,42 @@ def preprocess_data(stop_event, times:deque, eeg_data:deque, markers:deque=None,
 
     import itertools
 
-    def _sort_buffers():
+    def _sort_buffers(k):
         """
         Sorts times, eeg_data, and markers (if present) chronologically based on times.
-        Maintains synchronization across all three buffers.
+        Performs the sort on just the first k indices or, if there are less than k, all the indices.
         """
-        if len(times) == 0:
-            return
+
+        k = min(k, min(len(times), len(eeg_data), len(markers) if markers is not None else len(times)))
         
-        # Convert deques to lists, get sort indices
-        times_list = list(times)
-        eeg_data_list = list(eeg_data)
-        markers_list = list(markers) if markers is not None else None
-        
-        # Get indices that would sort times
-        sort_indices = np.argsort(times_list)
-        
-        # Sort all buffers by the same indices
-        times_sorted = [times_list[i] for i in sort_indices]
-        eeg_data_sorted = [eeg_data_list[i] for i in sort_indices]
-        markers_sorted = [markers_list[i] for i in sort_indices] if markers_list is not None else None
-        
-        # Clear and repopulate deques
-        times.clear()
-        eeg_data.clear()
         if markers is not None:
-            markers.clear()
-        
-        times.extend(times_sorted)
-        eeg_data.extend(eeg_data_sorted)
-        if markers is not None:
-            markers.extend(markers_sorted)
+            sorted_times = list()
+            sorted_eeg = list()
+            sorted_markers = list()
+
+            for _ in range(k):
+                sorted_times.append(times.popleft())
+                sorted_eeg.append(eeg_data.popleft())
+                sorted_markers.append(markers.popleft())
+            
+            sorted_indices = np.argsort(sorted_times)
+            for idx in reversed(sorted_indices):
+                times.appendleft(sorted_times[idx])
+                eeg_data.appendleft(sorted_eeg[idx])
+                markers.appendleft(sorted_markers[idx])
+
+        else:
+            sorted_times = list()
+            sorted_eeg = list()
+
+            for _ in range(k):
+                sorted_times.append(times.popleft())
+                sorted_eeg.append(eeg_data.popleft())
+            
+            sorted_indices = np.argsort(sorted_times)
+            for idx in reversed(sorted_indices):
+                times.appendleft(sorted_times[idx])
+                eeg_data.appendleft(sorted_eeg[idx])
 
     def _append_new_raw_and_filter():
         """
@@ -267,8 +269,10 @@ def preprocess_data(stop_event, times:deque, eeg_data:deque, markers:deque=None,
         while not stop_event.is_set() or (
             len(eeg_data) >= CLASSIFICATION_WINDOW_SAMPLES + CLASSIFICATION_FILTERING_PADDING_SAMPLES*2 and len(times) >= CLASSIFICATION_WINDOW_SAMPLES + CLASSIFICATION_FILTERING_PADDING_SAMPLES*2
         ):
+            if len(eeg_data)%250 == 0:
+                print(len(eeg_data), "samples in buffer")
             # Sort buffers chronologically
-            _sort_buffers()
+            _sort_buffers(CLASSIFICATION_WINDOW_SAMPLES + CLASSIFICATION_FILTERING_PADDING_SAMPLES*2)
             
             # Add any newly appended raw samples to filtered_buffer
             _append_new_raw_and_filter()
@@ -309,8 +313,10 @@ def preprocess_data(stop_event, times:deque, eeg_data:deque, markers:deque=None,
         while not stop_event.is_set() or (
             len(eeg_data) >= required_buffer_size and len(markers) >= required_buffer_size and len(times) >= required_buffer_size
         ):
+            if len(eeg_data)%250 == 0:
+                print(len(eeg_data), "samples in buffer")
             # Sort buffers chronologically
-            _sort_buffers()
+            _sort_buffers(required_buffer_size)
             
             # fill filtered buffer from any new raw samples
             _append_new_raw_and_filter()
@@ -352,57 +358,16 @@ def preprocess_data(stop_event, times:deque, eeg_data:deque, markers:deque=None,
 
     # return values if requested
     if return_values is not None:
-        return_values.append(segments)
+        return_values.append(segments) #TODO: Change to update return values regularly for oncurrent saving
+        #Add emptey segments list and freq list to return values at start, append to them regularly
         return_values.append(freqs[freq_mask])
 
     return segments, freqs[freq_mask]
 
-def plot_trial(trials, trial_number, channel, freqs, window=(0.0,0.0)):
-    """
-    Plots time-series and time-frequency for a given trial and channel.
-    """
-
-    import matplotlib.pyplot as plt
-
-    if trial_number < 0 or trial_number >= len(trials):
-        print(f"Trial {trial_number} out of range.")
-        return
-
-    start_marker, time_segment, segment, spectrogram = trials[trial_number]
-
-    #Grab a section of the trial if window is specified
-    if window != (0.0,0.0):
-        start_time, end_time = window
-        mask = (time_segment >= start_time) & (time_segment <= end_time)
-        time_segment = time_segment[mask]
-        segment = segment[mask, :]
-        spectrogram = spectrogram[np.where((time_segment >= start_time) & (time_segment <= end_time))[0], :, :]
-    
-    fig, axs = plt.subplots(2, 1, figsize=(10, 8))
-    fig.suptitle(f"Trial {trial_number} | Marker {start_marker} | Channel {channel}")
-
-    # --- Time series ---
-    channel_idx = channel - 1  # zero-based index
-    axs[0].plot(time_segment, segment[:, channel_idx])
-    axs[0].set_title("Time Series")
-    axs[0].set_xlabel("Time (s)")
-    axs[0].set_ylabel("Voltage (V)")
-
-    # --- Time-frequency ---
-    tf_data = spectrogram[:, :, channel_idx].T  # shape: (freq_bins, time_frames)
-    im = axs[1].imshow(tf_data,
-                       aspect='auto',
-                       origin='lower',
-                       extent=[time_segment[0], time_segment[-1], freqs[0], freqs[-1]])
-    axs[1].set_title("Time-Frequency (Spectrogram)")
-    axs[1].set_xlabel("Time (s)")
-    axs[1].set_ylabel("Frequency (Hz)")
-    fig.colorbar(im, ax=axs[1], label="Magnitude (VdB)")
-
-    plt.tight_layout()
-    plt.show()
-
 def main():
+    os.makedirs("./data/raw", exist_ok=True)
+    os.makedirs("./data/processed", exist_ok=True)
+
     filename = "MI_EEG_20251005_171205_Session1LS.csv"
 
     if len(sys.argv) < 2:
@@ -413,24 +378,34 @@ def main():
 
     filepath = os.path.abspath(os.path.join("data", "raw", filename))
     times, eeg_data, markers = deque(), deque(), deque()
-    
-    stop_event = threading.Event()
-    return_values = list()
-    thread = threading.Thread(target=preprocess_data, args=(stop_event, times, eeg_data, markers, return_values))
-    thread.start()
 
-    read_eeg_csv(filepath, times, eeg_data, markers)
+    read_thread = threading.Thread(target=read_eeg_csv, args=(filepath, times, eeg_data, markers))
+    read_thread.start()
+
+    preproccess_stop_event = threading.Event()
+    preprocess_return_values = list()
+    preprocess_thread = threading.Thread(target=preprocess_data, args=(preproccess_stop_event, times, eeg_data, markers, preprocess_return_values))
+    preprocess_thread.start()
+
+    #TODO: Add saving thread
+
+    #read_eeg_csv(filepath, times, eeg_data, markers)
 
     time.sleep(10)
     
-    stop_event.set()
-    thread.join()
+    preproccess_stop_event.set()
+    preprocess_thread.join()
+    
+    trials = preprocess_return_values[0]
+    freqs = preprocess_return_values[1]
 
-    trials = return_values[0]
-    freqs = return_values[1]
-
-    for trial in range(len(trials)):
-        plot_trial(trials, trial, 1, freqs)
+    # Save trials to a pickle file
+    output_filepath = os.path.abspath(os.path.join("data", "processed", f"processed_{filename}.pkl"))
+    with open(output_filepath, 'wb') as f:
+        pickle.dump({
+            'trials': trials,
+            'freqs': freqs
+        }, f)
 
 if __name__ == "__main__":
     main()
