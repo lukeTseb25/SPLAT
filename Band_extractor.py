@@ -5,6 +5,7 @@ import scipy.signal
 import os
 import math
 import sklearn
+import csv
 
 # Event markers
 MARKER_RIGHT = 1.0  # right arm imagery
@@ -15,7 +16,7 @@ MARKER_FAIL = 5.0   # failed to add marker
 
 # Epoching parameters
 EPOCH_START = -2.0
-EPOCH_END = 5.0
+EPOCH_END = 4.0
 BASELINE_START = -2.0
 BASELINE_END = 0.0
 
@@ -94,10 +95,12 @@ fs = 250
 # Identify events robustly
 events = []
 for i, marker_val in enumerate(markers):
-   if marker_val == MARKER_RIGHT:
+    if marker_val == MARKER_RIGHT:
        events.append((timestamps[i], "Right"))
-   elif marker_val == MARKER_LEFT:
+    elif marker_val == MARKER_LEFT:
        events.append((timestamps[i], "Left"))
+    elif marker_val == MARKER_LEG:
+       events.append((timestamps[i], "Leg"))
 
 
 print(f"Found {len(events)} events")
@@ -116,14 +119,12 @@ epochs_dict = extract_epochs(filt_eeg, timestamps, events,
 
 print("Epoch keys available:", list(epochs_dict.keys()))
 
-
 # ----------------------------
 # ---- BANDPOWER FEATURES -----
 # ----------------------------
 
-
 bands = {
-   "theta": (4, 7),
+    #"theta": (4, 7), # Theta is ignored and bandpower analysis is only focused on mu and beta 
    "mu": (8, 13),
    "beta": (13, 30)
 }
@@ -134,45 +135,39 @@ X = []
 y = []
 
 
-for label in ["Left", "Right"]:
+for label in ["Left", "Right", "Leg"]:
    if label not in epochs_dict:
        print(f"No epochs for label {label}, skipping")
        continue
-   class_id = 0 if label == "Left" else 1
-   for epoch in epochs_dict[label]:
+   class_id = 0 if label == "Left" else 1 if label == "Right" else 2 # 0 is left arm, 1 is right arm, 2 is leg 
+   for epoch in epochs_dict[label]: 
        features = []
        # Bandpower for each band
        for band_name, band_range in bands.items():
            bp = compute_bandpower(epoch, fs, band_range)
            features.extend(bp)
        # ERD/ERS in mu and beta
-       erd_mu = compute_erd_ers(epoch, fs, bands["mu"], baseline_samples)
-       erd_beta = compute_erd_ers(epoch, fs, bands["beta"], baseline_samples)
-       features.extend(erd_mu)
-       features.extend(erd_beta)
-       X.append(features)
+       erd_ers_mu = compute_erd_ers(epoch, fs, bands["mu"], baseline_samples)
+       erd_ers_beta = compute_erd_ers(epoch, fs, bands["beta"], baseline_samples)
+       features.extend(erd_ers_mu)
+       features.extend(erd_ers_beta)
+       X.append(features, class_id)
        y.append(class_id)
 
 
 X = np.array(X)
 y = np.array(y)
-X = np.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
 
-print("Feature matrix shape:", X.shape)
-print("Labels shape:", y.shape)
+with open('output.csv', mode='w', newline='') as fileX:
+    writer = csv.writer(fileX)
+    writer.writerows(X) 
+
+with open('labels.csv', mode='w', newline='') as fileY:
+    writer = csv.writer(fileY)
+    for label in y:
+        writer.writerow([label])
 
 
-# Optional: simple LDA classifier
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
 
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-clf = LinearDiscriminantAnalysis()
-clf.fit(X_train, y_train)
-pred = clf.predict(X_test)
-acc = accuracy_score(y_test, pred)
-print("Classification Accuracy:", acc)
 
 
