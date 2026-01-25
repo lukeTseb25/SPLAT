@@ -33,6 +33,7 @@ def read_eeg_csv(filepath):
 
 
 def bandpass_filter(data, fs, lowcut, highcut, order=4):
+   data = np.nan_to_num(data)
    nyquist = 0.5 * fs
    low = lowcut / nyquist
    high = highcut / nyquist
@@ -82,7 +83,7 @@ def compute_erd_ers(epoch, fs, band, baseline_samples):
 # -------------------------
 # ---- MAIN PIPELINE  -----
 # -------------------------
-filename = "sorted_MI_EEG_20251102_182717.csv"
+filename = "sorted_MI_EEG_20251005_171205_Session1LS.csv"
 filepath = os.path.abspath(os.path.join("data", "raw", filename))
 
 
@@ -151,11 +152,10 @@ for label in ["Left", "Right", "Leg"]:
        erd_ers_beta = compute_erd_ers(epoch, fs, bands["beta"], baseline_samples)
        features.extend(erd_ers_mu)
        features.extend(erd_ers_beta)
-       X.append(features, class_id)
+       X.append(features)
        y.append(class_id)
 
-
-X = np.array(X)
+X = np.array(X) 
 y = np.array(y)
 
 with open('output.csv', mode='w', newline='') as fileX:
@@ -166,8 +166,4 @@ with open('labels.csv', mode='w', newline='') as fileY:
     writer = csv.writer(fileY)
     for label in y:
         writer.writerow([label])
-
-
-
-
 
