@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 import scipy.signal
 import os
 import math
-import sklearn
+import argparse
+import sys
 import csv
 
 # Event markers
@@ -83,8 +84,23 @@ def compute_erd_ers(epoch, fs, band, baseline_samples):
 # -------------------------
 # ---- MAIN PIPELINE  -----
 # -------------------------
-filename = "sorted_MI_EEG_20251005_171205_Session1LS.csv"
-filepath = os.path.abspath(os.path.join("data", "raw", filename))
+parser = argparse.ArgumentParser(description="Extract bandpower features from raw EEG CSV.")
+parser.add_argument('--filename', '-f', default="MI_EEG_20251005_171205_Session1LS.csv",
+                    help='Raw CSV filename located in data/raw')
+args = parser.parse_args()
+filename = args.filename
+input_path = os.path.join("data", "raw", filename)
+if not os.path.exists(input_path):
+    print(f"Input file {input_path} not found.", file=sys.stderr)
+    sys.exit(1)
+filepath = os.path.abspath(input_path)
+
+# Prepare processed output paths using the raw filename base
+processed_dir = os.path.join("data", "processed")
+os.makedirs(processed_dir, exist_ok=True)
+base_name = os.path.splitext(os.path.basename(filename))[0]
+out_features_path = os.path.join(processed_dir, f"output_{base_name}.csv")
+out_labels_path = os.path.join(processed_dir, f"labels_{base_name}.csv")
 
 
 # Load data
@@ -162,11 +178,11 @@ y = np.array(y)
 print(X[1:])
 print(X.shape)
 
-with open('output.csv', mode='w', newline='') as fileX:
+with open(out_features_path, mode='w', newline='') as fileX:
     writer = csv.writer(fileX)
     writer.writerows(X) 
 
-with open('labels.csv', mode='w', newline='') as fileY:
+with open(out_labels_path, mode='w', newline='') as fileY:
     writer = csv.writer(fileY)
     for label in y:
         writer.writerow([label])
