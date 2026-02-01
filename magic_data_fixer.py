@@ -20,8 +20,17 @@ with open(input_filepath, newline="", encoding="utf-8") as csvfile:
     reader = csv.reader(csvfile)
     data = list(reader)
 
-# Sort by the first column (index 0)
-data_sorted = sorted(data, key=lambda row: row[0])
+# Preserve header (first row) and sort the remaining rows by the first column
+if not data:
+    data_sorted = []
+else:
+    header = data[0]
+    body = data[1:]
+    if body:
+        body_sorted = sorted(body, key=lambda row: row[0])
+    else:
+        body_sorted = []
+    data_sorted = [header] + body_sorted
 
 with open(output_filepath, "w", newline="", encoding="utf-8") as csvfile:
     writer = csv.writer(csvfile)
