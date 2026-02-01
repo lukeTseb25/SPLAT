@@ -69,7 +69,7 @@ def compute_bandpower(epoch, fs, band):
    low, high = band
    freqs, psd = scipy.signal.welch(epoch, fs=fs, nperseg=int(fs*1.0), axis=0)
    mask = (freqs >= low) & (freqs <= high)
-   return np.trapz(psd[mask], freqs[mask], axis=0)
+   return np.trapezoid(psd[mask], freqs[mask], axis=0)
 
 def compute_erd_ers(epoch, fs, band, baseline_samples):
    baseline = epoch[:baseline_samples, :]
@@ -147,16 +147,20 @@ for label in ["Left", "Right", "Leg"]:
            bp = compute_bandpower(epoch, fs, band_range)
            features.extend(bp)
        # ERD/ERS in mu and beta
+    #   norm(x) = tanh(ln(x+1))
        erd_ers_mu = compute_erd_ers(epoch, fs, bands["mu"], baseline_samples)
        erd_ers_beta = compute_erd_ers(epoch, fs, bands["beta"], baseline_samples)
        features.extend(erd_ers_mu)
        features.extend(erd_ers_beta)
-       X.append(features, class_id)
+       X.append(features)
        y.append(class_id)
 
 
 X = np.array(X)
 y = np.array(y)
+
+print(X[1:])
+print(X.shape)
 
 with open('output.csv', mode='w', newline='') as fileX:
     writer = csv.writer(fileX)
