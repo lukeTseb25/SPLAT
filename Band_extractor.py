@@ -187,3 +187,24 @@ with open(out_labels_path, mode='w', newline='') as fileY:
     for label in y:
         writer.writerow([label])
 
+label_map = {0: "Left", 1: "Right", 2: "Leg"}
+for i in range(len(X)):
+    mu_bp = np.array(X[i][0:8])
+    beta_bp = np.array(X[i][8:16])
+
+    class_name = label_map[int(y[i])] if i < len(y) else "Unknown"
+
+    channels = np.arange(1, 9)
+    width = 0.35
+
+    plt.figure()
+    plt.bar(channels - width/2, mu_bp, width, label='Mu (8–13 Hz)', color='tab:blue')
+    plt.bar(channels + width/2, beta_bp, width, label='Beta (13–30 Hz)', color='tab:orange')
+    plt.xlabel('Channel')
+    plt.xticks(channels)
+    plt.ylabel('Bandpower')
+    plt.title(f"Trial {i+1} - {class_name} - Per-channel Mu and Beta Bandpower")
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+print("Feature extraction completed.")
