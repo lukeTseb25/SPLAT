@@ -13,6 +13,7 @@ Requirements:
 
 import threading
 import time
+from time import perf_counter
 import random
 import csv
 import os
@@ -38,6 +39,8 @@ EEG_CHANNELS = ["CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7", "CH8"]
 
 # Motor Imagery Experiment Parameters
 NUM_TRIALS = 3  # Configurable number of trials
+READY_DURATION = 1.0  # seconds to show "Get Ready" message
+CUE_DURATION = 0.25  # seconds to show START/STOP cue
 INSTRUCTION_DURATION = 2.0  # seconds to show left/right instruction
 IMAGERY_DURATION = 3.0  # seconds for motor imagery
 INTER_TRIAL_INTERVAL = 3.0  # seconds between trials
@@ -128,7 +131,6 @@ class LSLDataCollector(threading.Thread):
                 writer.writerow(row)
 
     def run(self):
-        from pylsl import resolve_byprop, StreamInlet
         self.resolve_streams()
         try:
             with open(self.output_csv, mode="w", newline="") as f:
@@ -192,7 +194,7 @@ def run_motor_imagery_experiment():
 
     # PsychoPy setup
     try:
-        from psychopy import visual, core, event
+        from psychopy import visual, event
         win = visual.Window(
             size=(1024, 768),
             color="black",
@@ -220,50 +222,80 @@ def run_motor_imagery_experiment():
 
     # Main experiment loop
     for trial_num, limb in enumerate(trials, 1):
-        # Display get ready message
+        # Display get ready message with wall clock timing
+        ready_start = perf_counter()
         ready_text.draw()
         win.flip()
-        core.wait(1.0)
-        
-        # Show instruction (right or left hand)
+        ready_elapsed = perf_counter() - ready_start
+        while ready_elapsed < READY_DURATION:
+            ready_elapsed = perf_counter() - ready_start
+            time.sleep((READY_DURATION - ready_elapsed)*0.95)
+
+        #Display instruction
+        instr_start = perf_counter()
         instruction_text.text = f"{limb.upper()}"
         instruction_text.draw()
         win.flip()
-        core.wait(INSTRUCTION_DURATION)
-        
-        # Show START cue and send marker
+        instr_elapsed = perf_counter() - instr_start
+        while instr_elapsed < INSTRUCTION_DURATION:
+            instr_elapsed = perf_counter() - instr_start
+            time.sleep((INSTRUCTION_DURATION - instr_elapsed)*0.95)
+
+        # Display START cue and send marker with precise timing
+        start_start = perf_counter()
         instruction_text.text = "START"
         instruction_text.draw()
-        # Schedule marker to be sent on next flip
 
-        #BIG CHANGE ALERT
-        if limb == "right arm": marker_val = MARKER_RIGHT 
-        elif limb == "left arm": marker_val = MARKER_LEFT
-        elif limb == "right leg": marker_val = MARKER_LEG
-        else: marker_val = MARKER_FAIL
+        if limb == "right arm":
+            marker_val = MARKER_RIGHT
+        elif limb == "left arm":
+            marker_val = MARKER_LEFT
+        elif limb == "right leg":
+            marker_val = MARKER_LEG
+        else:
+            marker_val = MARKER_FAIL
+
         win.callOnFlip(lambda m=marker_val: marker_outlet.push_sample([m]))
         win.flip()
-        core.wait(0.25)
 
-        # Show HOLD during imagery period
+        start_elapsed = perf_counter() - start_start
+        while start_elapsed < CUE_DURATION:
+            start_elapsed = perf_counter() - start_start
+            time.sleep((CUE_DURATION - start_elapsed)*0.95)
+
+        # Show HOLD for the rest of the imagery duration minus the time already spent on START cue
+        hold_start = perf_counter()
         instruction_text.text = "HOLD"
         instruction_text.draw()
         win.flip()
-        core.wait(IMAGERY_DURATION)
         
-        # Show STOP and send stop marker
+        hold_elapsed = perf_counter() - hold_start
+        while hold_elapsed < (IMAGERY_DURATION - CUE_DURATION):
+            hold_elapsed = perf_counter() - hold_start
+            time.sleep((IMAGERY_DURATION - CUE_DURATION - hold_elapsed)*0.95)
+        
+        # Show STOP cue and send stop marker; STOP counts toward INTER_TRIAL_INTERVAL
+        stop_start = perf_counter()
         instruction_text.text = "STOP"
         instruction_text.draw()
         win.callOnFlip(lambda: marker_outlet.push_sample([MARKER_STOP]))
         win.flip()
-        core.wait(1.0)
         
-        # Inter-trial interval
-        win.flip()  # clear screen
-        core.wait(INTER_TRIAL_INTERVAL)
-        
+        stop_elapsed = perf_counter() - stop_start
+        while stop_elapsed < CUE_DURATION:
+            stop_elapsed = perf_counter() - stop_start
+            time.sleep((CUE_DURATION - stop_elapsed)*0.95)
+
+        # Show wait for the rest of the inter-trial interval minus the time already spent on STOP cue
+        instr_start = perf_counter()
+        win.flip()
+        instr_elapsed = perf_counter() - instr_start
+        while instr_elapsed < (INTER_TRIAL_INTERVAL - CUE_DURATION):
+            instr_elapsed = perf_counter() - instr_start
+            time.sleep((INTER_TRIAL_INTERVAL - CUE_DURATION - instr_elapsed)*0.95)
+
         logging.info(f"Completed trial {trial_num}/{len(trials)}: {limb}")
-        
+
         # Check for quit
         if event.getKeys(keyList=["escape"]):
             break
