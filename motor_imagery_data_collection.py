@@ -229,9 +229,11 @@ def run_motor_imagery_experiment():
         ready_elapsed = perf_counter() - ready_start
         while ready_elapsed < READY_DURATION:
             ready_elapsed = perf_counter() - ready_start
+            if ready_elapsed >= READY_DURATION:
+                break
             time.sleep((READY_DURATION - ready_elapsed)*0.95)
 
-        #Display instruction
+        # Display instruction
         instr_start = perf_counter()
         instruction_text.text = f"{limb.upper()}"
         instruction_text.draw()
@@ -239,6 +241,8 @@ def run_motor_imagery_experiment():
         instr_elapsed = perf_counter() - instr_start
         while instr_elapsed < INSTRUCTION_DURATION:
             instr_elapsed = perf_counter() - instr_start
+            if instr_elapsed >= INSTRUCTION_DURATION:
+                break
             time.sleep((INSTRUCTION_DURATION - instr_elapsed)*0.95)
 
         # Display START cue and send marker with precise timing
@@ -261,6 +265,8 @@ def run_motor_imagery_experiment():
         start_elapsed = perf_counter() - start_start
         while start_elapsed < CUE_DURATION:
             start_elapsed = perf_counter() - start_start
+            if start_elapsed >= CUE_DURATION:
+                break
             time.sleep((CUE_DURATION - start_elapsed)*0.95)
 
         # Show HOLD for the rest of the imagery duration minus the time already spent on START cue
@@ -272,6 +278,8 @@ def run_motor_imagery_experiment():
         hold_elapsed = perf_counter() - hold_start
         while hold_elapsed < (IMAGERY_DURATION - CUE_DURATION):
             hold_elapsed = perf_counter() - hold_start
+            if hold_elapsed >= (IMAGERY_DURATION - CUE_DURATION):
+                break
             time.sleep((IMAGERY_DURATION - CUE_DURATION - hold_elapsed)*0.95)
         
         # Show STOP cue and send stop marker; STOP counts toward INTER_TRIAL_INTERVAL
@@ -284,6 +292,8 @@ def run_motor_imagery_experiment():
         stop_elapsed = perf_counter() - stop_start
         while stop_elapsed < CUE_DURATION:
             stop_elapsed = perf_counter() - stop_start
+            if stop_elapsed >= CUE_DURATION:
+                break
             time.sleep((CUE_DURATION - stop_elapsed)*0.95)
 
         # Show wait for the rest of the inter-trial interval minus the time already spent on STOP cue
@@ -292,6 +302,8 @@ def run_motor_imagery_experiment():
         instr_elapsed = perf_counter() - instr_start
         while instr_elapsed < (INTER_TRIAL_INTERVAL - CUE_DURATION):
             instr_elapsed = perf_counter() - instr_start
+            if instr_elapsed >= (INTER_TRIAL_INTERVAL - CUE_DURATION):
+                break
             time.sleep((INTER_TRIAL_INTERVAL - CUE_DURATION - instr_elapsed)*0.95)
 
         logging.info(f"Completed trial {trial_num}/{len(trials)}: {limb}")
