@@ -44,6 +44,7 @@ CUE_DURATION = 0.25  # seconds to show START/STOP cue
 INSTRUCTION_DURATION = 2.0  # seconds to show left/right instruction
 IMAGERY_DURATION = 3.0  # seconds for motor imagery
 INTER_TRIAL_INTERVAL = 3.0  # seconds between trials
+#Whole trial is 9 seconds
 
 # Marker values
 MARKER_RIGHT = "1"  # right arm imagery
