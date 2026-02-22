@@ -38,7 +38,7 @@ SAMPLE_RATE = 250  # Hz
 EEG_CHANNELS = ["CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7", "CH8"]
 
 # Motor Imagery Experiment Parameters
-NUM_TRIALS = 3  # Configurable number of trials
+NUM_TRIALS = 102  # Configurable number of trials
 READY_DURATION = 1.0  # seconds to show "Get Ready" message
 CUE_DURATION = 0.25  # seconds to show START/STOP cue
 INSTRUCTION_DURATION = 2.0  # seconds to show left/right instruction
