@@ -49,8 +49,8 @@ def create_pipeline():
 def main():
     print("Loading data...")
     X, y = load_data(
-        'data/processed/output_MI_EEG_20251005_171205_Session1LS.csv',
-        'data/processed/labels_MI_EEG_20251005_171205_Session1LS.csv'
+        'data/processed/output_sorted_MI_EEG_20260208_190948Pranati1.csv',
+        'data/processed/labels_sorted_MI_EEG_20260208_190948Pranati1.csv'
     )
     
     print(f"Data shape: {X.shape}")
