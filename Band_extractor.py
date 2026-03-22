@@ -31,7 +31,7 @@ BASELINE_END = 6.0
 def read_eeg_csv(filepath):
   df = pd.read_csv(filepath)
   time = df.iloc[:, 0].values
-  eeg_data = df.iloc[:, 1:9].values  # Channels 1-8
+  eeg_data = df.iloc[:, 1:7].values  # Channels 1-6
   markers = [float(num) if not math.isnan(num) else 0 for num in df.iloc[:, -1]]
   return time, eeg_data, markers
 
