@@ -87,6 +87,7 @@ class LSLDataCollector(threading.Thread):
             if not eeg_streams:
                 logging.error(f"No EEG stream found with name '{EEG_STREAM_NAME}'. Exiting.")
                 sys.exit(1)
+                os._exit(1)
             self.eeg_inlet = StreamInlet(eeg_streams[0], max_buflen=360)
             self.clock_offset = self.eeg_inlet.time_correction()
             logging.info(f"Computed clock offset: {self.clock_offset:.6f} seconds")
@@ -96,12 +97,14 @@ class LSLDataCollector(threading.Thread):
             if not marker_streams:
                 logging.error(f"No Marker stream found with name '{MARKER_STREAM_NAME}'. Exiting.")
                 sys.exit(1)
+                os._exit(1)
             self.marker_inlet = StreamInlet(marker_streams[0], max_buflen=360)
 
             logging.info("LSL streams resolved. Starting data collection...")
         except Exception as e:
             logging.exception("Exception during stream resolution:")
             sys.exit(1)
+            os._exit(1)
 
     def flush_remaining(self, writer):
         """Flush any remaining buffered data to the CSV."""
