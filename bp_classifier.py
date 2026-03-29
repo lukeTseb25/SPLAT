@@ -49,10 +49,11 @@ def create_pipeline():
 def main():
     print("Loading data...")
     X, y = load_data(
-        'data/processed/output_MI_EEG_20251005_171205_Session1LS.csv',
-        'data/processed/labels_MI_EEG_20251005_171205_Session1LS.csv'
+        '.\data\processed\labels_20260322_Pranati1.csv',
+        '.\data\processed\output_20260322_Pranati1.csv'
     )
     
+    y = np.array(y, dtype=int)  # Ensure labels are integers
     print(f"Data shape: {X.shape}")
     print(f"Class distribution: {np.bincount(y)}")
     

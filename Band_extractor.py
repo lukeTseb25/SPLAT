@@ -102,7 +102,7 @@ def compute_erd_ers(epoch, fs, band, baseline_samples):
 # -------------------------
 # ---- MAIN PIPELINE  -----
 # -------------------------
-filename = "sorted_MI_EEG_20260208_190948Pranati1.csv"
+filename = "sorted_MI_EEG_20260322_Pranati1.csv"
 filepath = os.path.abspath(os.path.join("data", "raw", filename))
 
 
@@ -194,7 +194,7 @@ for label in ["Left", "Right", "Leg"]:
       y.append(class_id)
 
 
-X = np.array(X)
+X = np.array(X) 
 y = np.array(y)
 
 
