@@ -1,3 +1,12 @@
+from collections import deque
+import csv
+import logging
+import threading
+import datetime
+import os
+import sys
+from modules.config import *
+
 class LSLDataCollector(threading.Thread):
     """
     Background thread that collects and synchronizes EEG and marker data.
@@ -8,6 +17,7 @@ class LSLDataCollector(threading.Thread):
         self.eeg_buffer = deque()
         self.marker_buffer = deque()
         timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+        os.makedirs(RAW_DATA_DIR, exist_ok=True)
         self.output_csv = os.path.join(RAW_DATA_DIR, f"MI_EEG_{timestamp_str}.csv")
         self.eeg_inlet = None
         self.marker_inlet = None

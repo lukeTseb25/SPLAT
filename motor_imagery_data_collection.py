@@ -140,13 +140,13 @@ class LSLDataCollector(threading.Thread):
                 writer.writerow(header)
                 while not self.stop_event.is_set():
                     try:
-                        sample_eeg, ts_eeg = self.eeg_inlet.pull_sample(timeout=0.0)
+                        sample_eeg, ts_eeg = self.eeg_inlet.pull_sample(timeout=0.0) # type: ignore
                         if sample_eeg is not None and ts_eeg is not None:
                             self.eeg_buffer.append((ts_eeg, sample_eeg))
                     except Exception as e:
                         logging.exception("Error pulling EEG sample:")
                     try:
-                        sample_marker, ts_marker = self.marker_inlet.pull_sample(timeout=0.0)
+                        sample_marker, ts_marker = self.marker_inlet.pull_sample(timeout=0.0) # type: ignore
                         if sample_marker is not None and ts_marker is not None:
                             adjusted_ts_marker = ts_marker - self.clock_offset
                             marker_val = sample_marker[0]
@@ -186,7 +186,7 @@ def run_motor_imagery_experiment():
     from pylsl import StreamInfo, StreamOutlet
     # Create LSL Marker stream
     try:
-        marker_info = StreamInfo(MARKER_STREAM_NAME, "Markers", 1, 0, "string", "marker_id")
+        marker_info = StreamInfo(MARKER_STREAM_NAME, "Markers", 1, 0, "string", "marker_id") # type: ignore
         marker_outlet = StreamOutlet(marker_info)
         logging.info("Marker stream created.")
     except Exception as e:

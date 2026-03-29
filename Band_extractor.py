@@ -43,7 +43,7 @@ def bandpass_filter(data, fs, lowcut, highcut, order=4):
   nyquist = 0.5 * fs
   low = lowcut / nyquist
   high = highcut / nyquist
-  b, a = scipy.signal.butter(order, [low, high], btype='band')
+  b, a = scipy.signal.butter(order, [low, high], btype='band') # type: ignore
   return scipy.signal.filtfilt(b, a, data, axis=0)
 
 
@@ -95,14 +95,14 @@ def compute_erd_ers(epoch, fs, band, baseline_samples):
   task = epoch[baseline_samples:, :]
   bp_base = compute_bandpower(baseline, fs, band)
   bp_task = compute_bandpower(task, fs, band)
-  erd = (bp_task - bp_base) / bp_base
+  erd = (bp_task - bp_base) / bp_base # type: ignore
   return erd
 
 
 # -------------------------
 # ---- MAIN PIPELINE  -----
 # -------------------------
-filename = "sorted_MI_EEG_20260208_190948Pranati1.csv"
+filename = "sorted_MI_EEG_20260322_Pranati1.csv"
 filepath = os.path.abspath(os.path.join("data", "raw", filename))
 
 
@@ -183,7 +183,7 @@ for label in ["Left", "Right", "Leg"]:
       # Bandpower for each band
       for band_name, band_range in bands.items():
           bp = compute_bandpower(epoch, fs, band_range)
-          features.extend(bp)
+          features.extend(bp) # type: ignore
       # ERD/ERS in mu and beta
    #   norm(x) = tanh(ln(x+1))
       erd_ers_mu = compute_erd_ers(epoch, fs, bands["mu"], baseline_samples)
@@ -215,12 +215,13 @@ with open('labels.csv', mode='w', newline='') as fileY:
 # Visualization of bandpower features for the first few trials
 label_map = {0: "Left", 1: "Right", 2: "Leg"}
 for i in range(len(X)):
-    mu_bp = np.array(X[i][16:24])
-    beta_bp = np.array(X[i][24:])
+    channel_count = X.shape[1] // 4
+    mu_bp = np.array(X[i][channel_count*2:channel_count*3])
+    beta_bp = np.array(X[i][channel_count*3:channel_count*4])
 
     class_name = label_map[int(y[i])] if i < len(y) else "Unknown"
 
-    channels = np.arange(1, 9)
+    channels = np.arange(1, channel_count + 1)
     width = 0.35
 
     plt.figure()

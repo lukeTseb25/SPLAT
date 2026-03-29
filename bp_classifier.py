@@ -8,19 +8,19 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 import matplotlib.pyplot as plt
 
-class TanhLogNormalizer(BaseEstimator, TransformerMixin):
+class TanhLogStandardizer(BaseEstimator, TransformerMixin):
     """
     Custom transformer that applies tanh(ln(x+1)) normalization to specified columns.
     """
-    def __init__(self, columns_to_normalize):
-        self.columns_to_normalize = columns_to_normalize
+    def __init__(self, columns_to_standardize):
+        self.columns_to_standardize = columns_to_standardize
     
     def fit(self, X, y=None):
         return self
     
     def transform(self, X):
         X = X.copy()
-        for col in self.columns_to_normalize:
+        for col in self.columns_to_standardize:
             X[:, col] = np.tanh(np.log(X[:, col] + 1))
         return X
 
@@ -35,10 +35,10 @@ def load_data(data_path, labels_path):
 def create_pipeline():
     """Create preprocessing and classifier pipeline."""
     # Columns 16-31 need the special normalization
-    columns_to_normalize = list(range(16, 32))
+    columns_to_standardize = list(range(12, 24))
     
     pipeline = Pipeline([
-        ('tanh_log_normalize', TanhLogNormalizer(columns_to_normalize)),
+        ('tanh_log_standardize', TanhLogStandardizer(columns_to_standardize)),
         ('scaler', StandardScaler()),
         ('classifier', RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1))
     ])
@@ -49,8 +49,8 @@ def create_pipeline():
 def main():
     print("Loading data...")
     X, y = load_data(
-        'data/processed/output_sorted_MI_EEG_20260208_190948Pranati1.csv',
-        'data/processed/labels_sorted_MI_EEG_20260208_190948Pranati1.csv'
+        'data/processed/output_sorted_MI_EEG_20260322_Pranati1.csv',
+        'data/processed/labels_sorted_MI_EEG_20260322_Pranati1.csv'
     )
     
     print(f"Data shape: {X.shape}")
@@ -83,10 +83,10 @@ def main():
     
     # Visualize confusion matrix
     plt.figure(figsize=(8, 6))
-    plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
+    plt.imshow(cm, interpolation='nearest', cmap=plt.colormaps.get_cmap('Blues'))
     plt.colorbar()
     tick_marks = np.arange(len(np.unique(y)))
-    plt.xticks(tick_marks, tick_marks)
+    plt.xticks(tick_marks, [str(x) for x in tick_marks])
     plt.title('Confusion Matrix')
     plt.ylabel('True Label')
     plt.xlabel('Predicted Label')
@@ -100,6 +100,12 @@ def main():
     top_indices = np.argsort(feature_importance)[-10:][::-1]
     for idx in top_indices:
         print(f"  Feature {idx}: {feature_importance[idx]:.4f}")
+
+    #Give confusion matrix for entire dataset
+    y_pred_full = pipeline.predict(X)
+    cm_full = confusion_matrix(y, y_pred_full)
+    print("\nConfusion Matrix for Entire Dataset:")
+    print(cm_full)
     
     return pipeline, (X_test, y_test, y_pred)
 
