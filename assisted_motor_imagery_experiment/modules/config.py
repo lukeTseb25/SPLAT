@@ -1,3 +1,5 @@
+import os
+
 #Classifier Parameters
 FS = 250
 NUM_CHANNELS = 8
@@ -35,7 +37,10 @@ IMAGERY_DURATION = 3.0  # seconds for motor imagery
 INTER_TRIAL_INTERVAL = 3.0  # seconds between trials
 #Whole trial is 9 seconds
 
+NO_MOVEMENT_PROBABILITY = 0.1  # Probability of a no-movement trial occurring
+
 # Marker values
+MARKER_NO_MOVEMENT = "0"  # no movement/rest trials
 MARKER_RIGHT = "1"  # right arm imagery
 MARKER_LEFT = "2"   # left arm imagery
 MARKER_LEG = "3"   # leg imagery
@@ -48,3 +53,36 @@ RAW_DATA_DIR = "./data/raw"
 # Data collection parameters
 MERGE_THRESHOLD = 0.002  # seconds threshold for aligning EEG and marker timestamps
 POLL_SLEEP = 0.001      # sleep time between polls in collector loop
+
+# File/directories
+RAW_DATA_DIR = "data/raw"
+os.makedirs(RAW_DATA_DIR, exist_ok=True)
+
+# Neurofeedback Parameters
+MU_BAND = (8, 12)       # Mu frequency band (Hz)
+BETA_BAND = (13, 30)    # Beta frequency band (Hz)
+WINDOW_LENGTH = 1.0     # Window length for bandpower calculation (seconds)
+WINDOW_OVERLAP = 0.95   # Window overlap (seconds)
+WINDOW_SHIFT = 0.05     # Window shift (seconds)
+BASELINE_START = -3.0   # Start time for baseline period (seconds relative to imagery start)
+BASELINE_END = -1.0     # End time for baseline period (seconds relative to imagery start)
+INITIAL_BASELINE_DURATION = 10.0  # Duration of initial baseline period in seconds
+BASELINE_WEIGHT_INITIAL = 0.7     # Weight for initial baseline (0-1)
+BASELINE_WEIGHT_TRIAL = 0.3       # Weight for per-trial baseline (0-1)
+DISPLAY_REFRESH_RATE = 60  # Hz, target refresh rate for display updates
+DISPLAY_UPDATE_INTERVAL = 1.0/DISPLAY_REFRESH_RATE  # seconds between display updates
+FEEDBACK_BAR_MAX_WIDTH = 1.2  # Maximum width of the feedback bar (normalized units)
+
+# Visual feedback parameters
+SMOOTHING_FACTOR = 0.8  # Weight given to previous value (0-1) for smooth transitions
+ERD_EMPHASIS_FACTOR = 1.5  # Emphasis factor for larger desynchronizations
+
+# Real-time processing optimization
+USE_FFT_BUFFER = True   # Use rolling FFT update instead of recomputing full FFT
+ADAPTIVE_ERD_SCALING = True  # Adapt ERD scaling based on subject performance
+MAX_INITIAL_ERD = 50    # Initial maximum expected ERD value (%)
+ERD_SCALING_FACTOR = 1.2  # Factor for adjusting max ERD based on performance
+
+# Bandpass filter parameters for preprocessing
+FILTER_ORDER = 4
+FILTER_BAND = (1, 45)   # Hz 

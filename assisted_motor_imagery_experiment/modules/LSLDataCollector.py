@@ -16,7 +16,7 @@ class LSLDataCollector(threading.Thread):
 		self.stop_event = stop_event
 		self.eeg_buffer = deque()
 		self.marker_buffer = deque()
-		timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S") # type: ignore
+		timestamp_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S") # type: ignore
 		os.makedirs(RAW_DATA_DIR, exist_ok=True)
 		self.output_csv = os.path.join(RAW_DATA_DIR, f"MI_EEG_{timestamp_str}.csv")
 		self.eeg_inlet = None
