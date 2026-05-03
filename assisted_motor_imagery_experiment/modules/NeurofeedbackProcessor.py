@@ -94,6 +94,8 @@ class NeurofeedbackProcessor:
             filtered_signal = bandpass_filter(baseline_signal, self.fs, FILTER_BAND[0], FILTER_BAND[1], FILTER_ORDER)
             self.initial_baseline_power_mu, _, _ = calculate_band_power(filtered_signal, self.fs, MU_BAND)
             self.initial_baseline_power_beta, _, _ = calculate_band_power(filtered_signal, self.fs, BETA_BAND)
+            self.baseline_power_beta = self.initial_baseline_power_beta  # Start with initial baseline for beta
+            self.baseline_power_mu = self.initial_baseline_power_mu  # Start with initial baseline for mu
             logging.info(f"Initial baseline calculated: mu={self.initial_baseline_power_mu}, beta={self.initial_baseline_power_beta}")
         else:
             logging.warning("No data collected for initial baseline")

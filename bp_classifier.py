@@ -49,8 +49,8 @@ def create_pipeline():
 def main():
     print("Loading data...")
     X, y = load_data(
-        '.\data\processed\labels_20260322_Pranati1.csv',
-        '.\data\processed\output_20260322_Pranati1.csv'
+        '.\data\processed\output_sorted_MI_EEG_20260412_150309.csv',
+        '.\data\processed\labels_sorted_MI_EEG_20260412_150309.csv'
     )
     
     y = np.array(y, dtype=int)  # Ensure labels are integers

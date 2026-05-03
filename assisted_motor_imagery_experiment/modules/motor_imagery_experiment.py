@@ -207,7 +207,7 @@ def run_motor_imagery_experiment(neurofeedback_processor=None):
 			ready_elapsed = perf_counter() - ready_start
 			if ready_elapsed >= READY_DURATION:
 				break
-			time.sleep((READY_DURATION - ready_elapsed)*0.95)
+			time.sleep((READY_DURATION - ready_elapsed)*0.5)
 
 		# Display instruction
 		instr_start = perf_counter()
@@ -221,29 +221,8 @@ def run_motor_imagery_experiment(neurofeedback_processor=None):
 			instr_elapsed = perf_counter() - instr_start
 			if instr_elapsed >= INSTRUCTION_DURATION:
 				break
-			time.sleep((INSTRUCTION_DURATION - instr_elapsed)*0.95)
+			time.sleep((INSTRUCTION_DURATION - instr_elapsed)*0.5)
 		
-		# Start collecting baseline data before START cue for neurofeedback
-		if neurofeedback_processor:
-			from psychopy import core
-			neurofeedback_processor.start_baseline_collection()
-			baseline_clock = core.Clock()
-			baseline_clock.reset()
-			
-			# Show instruction during baseline collection (2 seconds)
-			while baseline_clock.getTime() < abs(BASELINE_START - BASELINE_END):  # 2 seconds
-				instruction_text.draw()
-				if channel_text:
-					channel_text.draw()
-				win.flip()
-				
-				# Check for quit
-				if event.getKeys(keyList=["escape"]):
-					win.close()
-					return
-			
-			neurofeedback_processor.stop_baseline_collection()
-
 		# Display START cue and send marker with precise timing
 		start_start = perf_counter()
 		instruction_text.text = "START"
@@ -272,9 +251,10 @@ def run_motor_imagery_experiment(neurofeedback_processor=None):
 			start_elapsed = perf_counter() - start_start
 			if start_elapsed >= CUE_DURATION:
 				break
-			time.sleep((CUE_DURATION - start_elapsed)*0.95)
+			time.sleep((CUE_DURATION - start_elapsed)*0.5)
 
 		# Show HOLD for the rest of the imagery duration minus the time already spent on START cue
+		logging.info(f"Start elapsed: {start_elapsed}")
 		hold_start = perf_counter()
 		if neurofeedback_processor:
 			from psychopy import core
@@ -298,6 +278,10 @@ def run_motor_imagery_experiment(neurofeedback_processor=None):
 					# Get current ERD values
 					smoothed_mu = neurofeedback_processor.get_smoothed_erd_mu()
 					smoothed_beta = neurofeedback_processor.get_smoothed_erd_beta()
+					
+					if smoothed_mu == None or smoothed_beta == None:
+						smoothed_mu = [0]
+						smoothed_beta = [0]
 					
 					# Update central feedback bar
 					bar_width = min(smoothed_mu * FEEDBACK_BAR_MAX_WIDTH, FEEDBACK_BAR_MAX_WIDTH)
@@ -356,13 +340,14 @@ def run_motor_imagery_experiment(neurofeedback_processor=None):
 			
 			if hold_elapsed >= (IMAGERY_DURATION - CUE_DURATION):
 				break
-			time.sleep((IMAGERY_DURATION - CUE_DURATION - hold_elapsed)*0.95)
+			time.sleep((IMAGERY_DURATION - CUE_DURATION - hold_elapsed)*0.5)
 		
 		# Stop real-time processing for neurofeedback
 		if neurofeedback_processor:
 			neurofeedback_processor.stop_processing()
 		
 		# Show STOP cue and send stop marker; STOP counts toward INTER_TRIAL_INTERVAL
+		logging.info(f"Hold elapsed: {hold_elapsed}")
 		stop_start = perf_counter()
 		instruction_text.text = "STOP"
 		instruction_text.draw()
@@ -376,7 +361,9 @@ def run_motor_imagery_experiment(neurofeedback_processor=None):
 			stop_elapsed = perf_counter() - stop_start
 			if stop_elapsed >= CUE_DURATION:
 				break
-			time.sleep((CUE_DURATION - stop_elapsed)*0.95)
+			time.sleep((CUE_DURATION - stop_elapsed)*0.5)
+
+		logging.info(f"Stop elapsed: {stop_elapsed}")
 
 		# Show wait for the rest of the inter-trial interval minus the time already spent on STOP cue
 		instr_start = perf_counter()
@@ -386,7 +373,7 @@ def run_motor_imagery_experiment(neurofeedback_processor=None):
 			instr_elapsed = perf_counter() - instr_start
 			if instr_elapsed >= (INTER_TRIAL_INTERVAL - CUE_DURATION):
 				break
-			time.sleep((INTER_TRIAL_INTERVAL - CUE_DURATION - instr_elapsed)*0.95)
+			time.sleep((INTER_TRIAL_INTERVAL - CUE_DURATION - instr_elapsed)*0.5)
 
 		logging.info(f"Completed trial {trial_num}/{len(trials)}: {limb}")
 		

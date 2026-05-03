@@ -19,7 +19,7 @@ def main():
 	
 	# Start data collector thread
 	stop_event = threading.Event()
-	collector = LSLDataCollector(stop_event)
+	collector = LSLDataCollector(stop_event, neurofeedback_processor)
 	collector.start()
 
 	# Run the experiment with neurofeedback
