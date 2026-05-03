@@ -29,11 +29,11 @@ SAMPLE_RATE = 250  # Hz
 EEG_CHANNELS = ["CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7", "CH8"]
 
 # Motor Imagery Experiment Parameters
-NUM_TRIALS = 102  # Configurable number of trials
+NUM_TRIALS = 51  # Configurable number of trials
 READY_DURATION = 1.0  # seconds to show "Get Ready" message
 CUE_DURATION = 0.25  # seconds to show START/STOP cue
 INSTRUCTION_DURATION = 2.0  # seconds to show left/right instruction
-IMAGERY_DURATION = 3.0  # seconds for motor imagery
+IMAGERY_DURATION = 6.0  # seconds for motor imagery
 INTER_TRIAL_INTERVAL = 3.0  # seconds between trials
 #Whole trial is 9 seconds
 
@@ -69,7 +69,7 @@ BASELINE_END = -1.0     # End time for baseline period (seconds relative to imag
 INITIAL_BASELINE_DURATION = 10.0  # Duration of initial baseline period in seconds
 BASELINE_WEIGHT_INITIAL = 1.0     # Weight for initial baseline (0-1)
 BASELINE_WEIGHT_TRIAL = 0.0     # Weight for per-trial baseline (0-1)
-DISPLAY_REFRESH_RATE = 60  # Hz, target refresh rate for display updates
+DISPLAY_REFRESH_RATE = 100  # Hz, target refresh rate for display updates
 DISPLAY_UPDATE_INTERVAL = 1.0/DISPLAY_REFRESH_RATE  # seconds between display updates
 FEEDBACK_BAR_MAX_WIDTH = 1.2  # Maximum width of the feedback bar (normalized units)
 
