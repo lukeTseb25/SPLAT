@@ -11,6 +11,20 @@ import numpy as np
 import logging
 from modules.config import *
 
+
+def wait_for_duration(start_time, duration, poll_interval=0.005):
+    """Wait for the remaining duration using a short polling interval.
+
+    This avoids the previous pattern of sleeping for half the remaining duration
+    on every loop, which artificially throttled the feedback refresh rate.
+    """
+    while True:
+        elapsed = perf_counter() - start_time
+        if elapsed >= duration:
+            return elapsed
+        time.sleep(min(poll_interval, max(0.0, duration - elapsed)))
+
+
 def run_motor_imagery_experiment(neurofeedback_processor=None):
 	from pylsl import StreamInfo, StreamOutlet
 	# Create LSL Marker stream
@@ -202,12 +216,7 @@ def run_motor_imagery_experiment(neurofeedback_processor=None):
 		if neurofeedback_processor and channel_text:
 			channel_text.draw()
 		win.flip()
-		ready_elapsed = perf_counter() - ready_start
-		while ready_elapsed < READY_DURATION:
-			ready_elapsed = perf_counter() - ready_start
-			if ready_elapsed >= READY_DURATION:
-				break
-			time.sleep((READY_DURATION - ready_elapsed)*0.5)
+		wait_for_duration(ready_start, READY_DURATION)
 
 		# Display instruction
 		instr_start = perf_counter()
@@ -216,12 +225,7 @@ def run_motor_imagery_experiment(neurofeedback_processor=None):
 		if neurofeedback_processor and channel_text:
 			channel_text.draw()
 		win.flip()
-		instr_elapsed = perf_counter() - instr_start
-		while instr_elapsed < INSTRUCTION_DURATION:
-			instr_elapsed = perf_counter() - instr_start
-			if instr_elapsed >= INSTRUCTION_DURATION:
-				break
-			time.sleep((INSTRUCTION_DURATION - instr_elapsed)*0.5)
+		wait_for_duration(instr_start, INSTRUCTION_DURATION)
 		
 		# Display START cue and send marker with precise timing
 		start_start = perf_counter()
@@ -246,15 +250,10 @@ def run_motor_imagery_experiment(neurofeedback_processor=None):
 		if neurofeedback_processor:
 			neurofeedback_processor.start_processing()
 
-		start_elapsed = perf_counter() - start_start
-		while start_elapsed < CUE_DURATION:
-			start_elapsed = perf_counter() - start_start
-			if start_elapsed >= CUE_DURATION:
-				break
-			time.sleep((CUE_DURATION - start_elapsed)*0.5)
+		start_elapsed = wait_for_duration(start_start, CUE_DURATION)
 
 		# Show HOLD for the rest of the imagery duration minus the time already spent on START cue
-		logging.info(f"Start elapsed: {start_elapsed}")
+		logging.info(f"Start elapsed: {start_elapsed:.3f}s")
 		hold_start = perf_counter()
 		if neurofeedback_processor:
 			from psychopy import core
@@ -264,24 +263,24 @@ def run_motor_imagery_experiment(neurofeedback_processor=None):
 			meter_height = 0.6
 			mu_meter_pos = (0.7, 0)
 			beta_meter_pos = (-0.7, 0)
+			feedback_update_count = 0
 		
 		instruction_text.text = "HOLD"
-		hold_elapsed = perf_counter() - hold_start
-		while hold_elapsed < (IMAGERY_DURATION - CUE_DURATION):
-			hold_elapsed = perf_counter() - hold_start
-			
+		hold_deadline = hold_start + (IMAGERY_DURATION - CUE_DURATION)
+		while perf_counter() < hold_deadline:
 			if neurofeedback_processor:
-				# Update feedback bars at regular intervals
+				# Update feedback bars at a stable interval without starving the UI loop
 				if display_timer.getTime() >= DISPLAY_UPDATE_INTERVAL:
 					display_timer.reset()
+					feedback_update_count += 1
 					
 					# Get current ERD values
 					smoothed_mu = neurofeedback_processor.get_smoothed_erd_mu()
 					smoothed_beta = neurofeedback_processor.get_smoothed_erd_beta()
 					
-					if smoothed_mu == None or smoothed_beta == None:
-						smoothed_mu = [0]
-						smoothed_beta = [0]
+					if smoothed_mu is None or smoothed_beta is None:
+						smoothed_mu = 0
+						smoothed_beta = 0
 					
 					# Update central feedback bar
 					bar_width = min(smoothed_mu * FEEDBACK_BAR_MAX_WIDTH, FEEDBACK_BAR_MAX_WIDTH)
@@ -323,6 +322,8 @@ def run_motor_imagery_experiment(neurofeedback_processor=None):
 					channel_text.draw()
 					
 					win.flip()
+					if feedback_update_count % 20 == 0:
+						logging.info(f"Feedback render cadence: {feedback_update_count} updates so far")
 				
 				# Check for quit during feedback update
 				if event.getKeys(keyList=["escape"]):
@@ -338,9 +339,10 @@ def run_motor_imagery_experiment(neurofeedback_processor=None):
 					win.close()
 					return
 			
-			if hold_elapsed >= (IMAGERY_DURATION - CUE_DURATION):
-				break
-			time.sleep((IMAGERY_DURATION - CUE_DURATION - hold_elapsed)*0.5)
+			time.sleep(0.005)
+		
+		hold_elapsed = perf_counter() - hold_start
+		logging.info(f"Hold elapsed: {hold_elapsed:.3f}s")
 		
 		# Stop real-time processing for neurofeedback
 		if neurofeedback_processor:
