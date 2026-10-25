@@ -63,8 +63,10 @@ class NeurofeedbackProcessor:
         self.filter_b, self.filter_a = butter(FILTER_ORDER, [low, high], btype='band')
         
         # Performance metrics
-        self.process_times = deque(maxlen=100)  # Store processing times
+        self.process_times = deque(maxlen=200)  # Store recent processing times
         self.last_process_time = time.time()
+        self.process_sample_counter = 0
+        self.last_slow_log_time = 0.0
         
     def set_active_hand(self, hand):
         """Set the active hand for the current trial."""
@@ -167,10 +169,15 @@ class NeurofeedbackProcessor:
     def stop_processing(self):
         """Stop real-time processing."""
         self.is_processing = False
-        # Calculate and log average processing time
         if self.process_times:
             avg_time = sum(self.process_times) / len(self.process_times)
-            logging.info(f"Average sample processing time: {avg_time*1000:.2f} ms")
+            max_time = max(self.process_times)
+            logging.info(
+                "Processing summary: avg %.2f ms, max %.2f ms, samples %d",
+                avg_time * 1000,
+                max_time * 1000,
+                len(self.process_times),
+            )
         logging.info("Stopped real-time processing")
         
     def process_sample(self, eeg_sample):
@@ -187,7 +194,7 @@ class NeurofeedbackProcessor:
         tuple : (mu_erd, beta_erd)
             Calculated ERD values (0 if not enough data or not processing)
         """
-        start_time = time.time()
+        start_time = time.perf_counter()
         channel_data = eeg_sample[self.channel_index]
         
         # Store sample in appropriate buffer
@@ -267,8 +274,20 @@ class NeurofeedbackProcessor:
                                        (1-SMOOTHING_FACTOR) * emphasized_beta)
                 
                 # Record processing time
-                process_duration = time.time() - start_time
+                process_duration = time.perf_counter() - start_time
                 self.process_times.append(process_duration)
+                self.process_sample_counter += 1
+
+                if process_duration > 0.02 or self.process_sample_counter % 100 == 0:
+                    if time.perf_counter() - self.last_slow_log_time > 5.0:
+                        avg_recent = np.mean(list(self.process_times)[-50:]) if len(self.process_times) >= 50 else np.mean(list(self.process_times))
+                        logging.info(
+                            "Neurofeedback processing: sample %d, avg recent %.2f ms, last %.2f ms",
+                            self.process_sample_counter,
+                            avg_recent * 1000,
+                            process_duration * 1000,
+                        )
+                        self.last_slow_log_time = time.perf_counter()
                 
                 return self.current_erd_mu, self.current_erd_beta
                 
