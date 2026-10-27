@@ -12,20 +12,24 @@ import matplotlib.pyplot as plt
 
 
 CSV_FILE = os.path.join(RAW_DATA_DIR, "sorted_MI_EEG_20260503_PranatiLast.csv")
-OUTPUT_FEATURES = os.path.join("data", "processed", "output_sorted_MI_EEG_20260503_PranatiLast.csv")
-OUTPUT_LABELS = os.path.join("data", "processed", "labels_sorted_MI_EEG_20260503_PranatiLast.csv")
+OUTPUT_FEATURES = os.path.join("data", "processed", "ct_output_sorted_MI_EEG_20260503_PranatiLast.csv")
+OUTPUT_LABELS = os.path.join("data", "processed", "ct_labels_sorted_MI_EEG_20260503_PranatiLast.csv")
 
 
 def marker_to_label(marker_str):
     if marker_str is None:
         return None
     m = str(marker_str).strip()
-    if m == "2":
+    if m == "0":
         return 0
     if m == "1":
         return 1
-    if m == "3":
+    if m == "2":
         return 2
+    if m == "3":
+        return 3
+    if m == "4":
+        return 0
     return None
 
 
@@ -33,7 +37,7 @@ def main():
     inp = deque()
     stop_event = threading.Event()
 
-    extractor = BandExtractor(inp, stop_event, max_output_len=100000)
+    extractor = BandExtractor(inp, stop_event, max_output_len=None)
     extractor.start()
 
     # feed CSV rows (skip header)

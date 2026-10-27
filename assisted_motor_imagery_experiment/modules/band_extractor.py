@@ -11,10 +11,7 @@ from modules.calculate_band_power import calculate_band_power
 class BandExtractor(threading.Thread):
 	"""Threaded band extractor.
 
-	- Consumes rows from `input_deque`. Rows may be either:
-	  * tuple (timestamp, sample_array) or
-	  * list-like where first element is timestamp and rest are channel values
-	  * or just a sequence of channel values (no timestamp)
+	- Consumes rows from `input_deque`. Rows are list-like where first element is timestamp and rest are channel values
 	- Extracts bandpower (mu and beta) for channels in `BAND_CHANNELS` using
 	  a sliding window defined by `BAND_WINDOW_SIZE_SAMPLES` and
 	  `BAND_WINDOW_STEP_SAMPLES` from `config.py`.
@@ -43,24 +40,10 @@ class BandExtractor(threading.Thread):
 		self._log = logging.getLogger(self.__class__.__name__)
 
 	def _parse_row(self, row):
-		"""Return (timestamp, sample_list, marker) or (None, sample_list, "")"""
+		"""Return (timestamp, sample_list, marker) (timestamp, sample_list, "")"""
 		try:
-			# tuple-like (ts, sample_array) - no marker included
-			if isinstance(row, tuple) and len(row) == 2:
-				ts, sample = row
-				return ts, list(sample), ""
-			# list-like where first element is timestamp and then channels and optional marker
-			if isinstance(row, (list, deque)) and len(row) >= len(EEG_CHANNELS) + 1:
-				ts = row[0]
-				channels = list(row[1:1+len(EEG_CHANNELS)])
-				marker = ""
-				# marker exists if there is an extra column after channels
-				if len(row) >= 1 + len(EEG_CHANNELS) + 1:
-					marker = row[1+len(EEG_CHANNELS)]
-				return ts, channels, marker
-			# otherwise assume the row itself is just channel samples
 			if isinstance(row, (list, tuple, np.ndarray)):
-				return None, list(row), ""
+				return row[0], list(row[1:-1]), row[-1]
 		except Exception:
 			pass
 		return None, [], ""

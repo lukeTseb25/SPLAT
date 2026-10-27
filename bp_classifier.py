@@ -34,7 +34,7 @@ def load_data(data_path, labels_path):
 
 def create_pipeline():
     """Create preprocessing and classifier pipeline."""
-    # Columns 16-31 need the special normalization
+    # Last half of columns need the special normalization CHANGE THIS IF YOU CHANGE THE NUMBER OF CHANNELS
     columns_to_standardize = list(range(12, 24))
     
     pipeline = Pipeline([
@@ -49,9 +49,14 @@ def create_pipeline():
 def main():
     print("Loading data...")
     X, y = load_data(
-        '.\data\processed\output_sorted_MI_EEG_20260503_PranatiLast.csv',
-        '.\data\processed\labels_sorted_MI_EEG_20260503_PranatiLast.csv'
+        '.\data\processed\output_sorted_MI_EEG_20260322_Pranati1.csv',
+        '.\data\processed\labels_sorted_MI_EEG_20260322_Pranati1.csv'
     )
+
+    # Drop all trials with label 2 to ignore legs for this experiment
+    mask = y != 1
+    X = X[mask]
+    y = y[mask]
     
     y = np.array(y, dtype=int)  # Ensure labels are integers
     print(f"Data shape: {X.shape}")

@@ -16,7 +16,6 @@ BAND_CHANNEL_PADDING_SAMPLES = int(BAND_CHANNEL_PADDING_SEC * FS)
 # BAND_WINDOW_STEP_SEC = 0.05
 # BAND_WINDOW_STEP_SAMPLES = int(BAND_WINDOW_STEP_SEC * FS)
 
-
 #FFT Stuff (Outdated)
 FREQ_LOW = 8
 FREQ_HIGH = 30
@@ -25,6 +24,7 @@ FFT_WINDOW_SIZE_SAMPLES = int(FFT_WINDOW_SIZE_SEC * FS)
 FFT_STEP_SIZE_SEC = 1.0/FS
 FFT_STEP_SIZE_SAMPLES = int(FFT_STEP_SIZE_SEC * FS)
 NFFT = 256
+# Classification parameters for FFT strategies
 CLASSIFICATION_WINDOW_SEC = 0.5
 CLASSIFICATION_WINDOW_SAMPLES = int(CLASSIFICATION_WINDOW_SEC * FS)
 CLASSIFICATION_WINDOW_STEP_SEC = 1.0/FS
@@ -76,7 +76,6 @@ os.makedirs(RAW_DATA_DIR, exist_ok=True)
 MU_BAND = (8, 12)       # Mu frequency band (Hz)
 BETA_BAND = (13, 30)    # Beta frequency band (Hz)
 WINDOW_LENGTH = 1.0     # Window length for bandpower calculation (seconds)
-WINDOW_OVERLAP = 0.95   # Window overlap (seconds)
 WINDOW_SHIFT = 0.05     # Window shift (seconds)
 BASELINE_START = -3.0   # Start time for baseline period (seconds relative to imagery start)
 BASELINE_END = -1.0     # End time for baseline period (seconds relative to imagery start)
