@@ -68,14 +68,10 @@ class BandExtractor(threading.Thread):
 			mu_powers.append(mu_bp)
 			beta_powers.append(beta_bp)
 
-		bands = {"mu": mu_powers, "beta": beta_powers}
-		entry = {
-			"timestamp": timestamp_for_window,
-			"bands": bands,
-			"mu": mu_powers,
-			"beta": beta_powers,
-		}
-		self.extracted_bands.append(entry)
+		row = [timestamp_for_window]
+		for mu_bp, beta_bp in zip(mu_powers, beta_powers):
+			row.extend([mu_bp, beta_bp])
+		self.extracted_bands.append(row)
 
 	def run(self):
 		while not (self.stop_event.is_set() and not self.input_deque):
@@ -188,17 +184,15 @@ class TrialExtractor(threading.Thread):
 			beta_bp, _, _ = calculate_band_power(signal, self.fs, BETA_BAND)
 			mu_powers.append(mu_bp)
 			beta_powers.append(beta_bp)
-		bands = {"mu": mu_powers, "beta": beta_powers}
+
 		label = marker_to_label(attach_marker)
-		entry = {
-			"timestamp": timestamp_for_window,
-			"bands": bands,
-			"mu": mu_powers,
-			"beta": beta_powers,
-			"marker": attach_marker,
-			"label": label,
-		}
-		self.extracted_bands.append(entry)
+		if label is None:
+			return
+		row = [timestamp_for_window]
+		for mu_bp, beta_bp in zip(mu_powers, beta_powers):
+			row.extend([mu_bp, beta_bp])
+		row.append(label)
+		self.extracted_bands.append(row)
 
 	def run(self):
 		while not (self.stop_event.is_set() and not self.input_deque):
