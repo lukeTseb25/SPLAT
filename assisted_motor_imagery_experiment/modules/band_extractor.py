@@ -19,7 +19,7 @@ class BandExtractor(threading.Thread):
 	- Marker handling is intentionally excluded here; use `TrialExtractor` for marker-aware trial labeling.
 	"""
 
-	def __init__(self, input_deque: deque, stop_event: threading.Event, fs: int = FS, max_output_len: int | None = None):
+	def __init__(self, input_deque: deque, stop_event: threading.Event, fs: int = FS, max_output_len: int | None = None, channel_idxs=None):
 		super().__init__(daemon=True)
 		self.input_deque = input_deque
 		self.stop_event = stop_event
@@ -27,7 +27,7 @@ class BandExtractor(threading.Thread):
 
 		self.window_size = BAND_WINDOW_SIZE_SAMPLES
 		self.step_size = max(1, BAND_WINDOW_STEP_SAMPLES)
-		self.channel_idxs = BAND_CHANNELS
+		self.channel_idxs = list(channel_idxs) if channel_idxs is not None else None
 
 		self.buffer = deque()
 		self.extracted_bands = deque(maxlen=max_output_len)
@@ -86,7 +86,10 @@ class BandExtractor(threading.Thread):
 				if not sample:
 					continue
 				try:
-					selected = [float(sample[i]) for i in self.channel_idxs if i < len(sample)]
+					if self.channel_idxs is None:
+						selected = [float(value) for value in sample]
+					else:
+						selected = [float(sample[i]) for i in self.channel_idxs if i < len(sample)]
 				except Exception:
 					continue
 				self.buffer.append((ts, selected))
@@ -124,14 +127,14 @@ class TrialExtractor(threading.Thread):
 	with the form {"timestamp": ts, "bands": {"mu": [...], "beta": [...]}, "marker": marker, "label": label}.
 	"""
 
-	def __init__(self, input_deque: deque, stop_event: threading.Event, fs: int = FS, max_output_len: int | None = None):
+	def __init__(self, input_deque: deque, stop_event: threading.Event, fs: int = FS, max_output_len: int | None = None, channel_idxs=None):
 		super().__init__(daemon=True)
 		self.input_deque = input_deque
 		self.stop_event = stop_event
 		self.fs = fs
 		self.window_size = BAND_WINDOW_SIZE_SAMPLES
 		self.step_size = max(1, BAND_WINDOW_STEP_SAMPLES)
-		self.channel_idxs = BAND_CHANNELS
+		self.channel_idxs = list(channel_idxs) if channel_idxs is not None else None
 		self.buffer = deque()
 		self.last_marker = None
 		self.last_marker_ts = None
@@ -148,14 +151,15 @@ class TrialExtractor(threading.Thread):
 			timestamp = float(values[0])
 		except (TypeError, ValueError):
 			return None, [], ""
+		if len(values) == 1:
+			return timestamp, [], ""
+		marker = values[-1]
+		marker = "" if marker is None else str(marker).strip()
 		channels = []
-		marker = ""
-		for value in values[1:]:
+		for value in values[1:-1]:
 			try:
 				channels.append(float(value))
 			except (TypeError, ValueError):
-				if marker == "":
-					marker = str(value)
 				continue
 		return timestamp, channels, marker
 
@@ -207,7 +211,10 @@ class TrialExtractor(threading.Thread):
 				if not sample:
 					continue
 				try:
-					selected = [float(sample[i]) for i in self.channel_idxs if i < len(sample)]
+					if self.channel_idxs is None:
+						selected = [float(value) for value in sample]
+					else:
+						selected = [float(sample[i]) for i in self.channel_idxs if i < len(sample)]
 				except Exception:
 					continue
 				marker = self._normalize_marker(marker)

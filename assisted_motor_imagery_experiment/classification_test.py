@@ -4,6 +4,7 @@ import threading
 import time
 from collections import deque
 
+import numpy as np
 import pandas as pd
 
 from modules.band_extractor import TrialExtractor
@@ -12,24 +13,41 @@ from modules.config import *
 from modules.csv_stream_writer import CSVStreamWriter
 
 
-DO_EXTRACTION = True
-DO_TRAIN = False
+DO_EXTRACTION = False
+DO_TRAIN = True
 
 CSV_FILE = os.path.join(RAW_DATA_DIR, "SaraReach3sorted_MI_EEG_20261027_185615.csv")
-OUTPUT_DATA = os.path.join("data", "processed", "extracted_SaraReach3sorted_MI_EEG_20261027_185615.csv")
-MODEL_PATH = os.path.join("data", "processed", "bp_model.joblib")
+OUTPUT_DATA = os.path.join(PROCESSED_DATA_DIR, "extracted_SaraReach3sorted_MI_EEG_20261027_185615.csv")
+MODEL_PATH = os.path.join(PROCESSED_DATA_DIR, "bp_model.joblib")
 
-
-def build_header():
+def build_header(channel_idxs=None):
     columns = ["timestamp"]
-    for channel_idx in BAND_CHANNELS:
+    for channel_idx in (channel_idxs or BAND_CHANNELS):
         channel_name = f"CH{channel_idx + 1}"
         columns.extend([f"{channel_name}_mu", f"{channel_name}_beta"])
     columns.append("label")
     return columns
 
 
-CSV_COLUMNS = build_header()
+CSV_COLUMNS = build_header(BAND_CHANNELS)
+
+
+def preview_csv(path, max_rows=10):
+    if not os.path.exists(path):
+        print(f"CSV preview unavailable: {path} does not exist")
+        return
+    with open(path, newline='') as f:
+        reader = csv.reader(f)
+        try:
+            header = next(reader)
+        except StopIteration:
+            print(f"CSV is empty: {path}")
+            return
+        print(f"Header: {header}")
+        for idx, row in enumerate(reader, start=1):
+            print(f"Row {idx}: {row[:10]}")
+            if idx >= max_rows:
+                break
 
 
 def build_trial_row(row):
@@ -55,18 +73,14 @@ def save_dataset(df):
     df.to_csv(OUTPUT_DATA, index=False)
 
 
-def stream_dataset(rows):
-    os.makedirs(os.path.dirname(OUTPUT_DATA), exist_ok=True)
-    output_queue = deque()
-    stop_event = threading.Event()
-    writer = CSVStreamWriter(output_queue, OUTPUT_DATA, header=CSV_COLUMNS, stop_event=stop_event)
-    writer.start()
-    for row in rows:
-        output_queue.append(row)
-    while output_queue:
-        time.sleep(0.01)
-    stop_event.set()
-    writer.join(timeout=5.0)
+def stream_extracted_rows(extractor, output_queue, stop_event, poll_interval=0.01):
+    while not (stop_event.is_set() and not extractor.extracted_bands and not output_queue):
+        while extractor.extracted_bands:
+            try:
+                output_queue.append(extractor.extracted_bands.popleft())
+            except Exception:
+                break
+        time.sleep(poll_interval)
 
 
 def read_dataset(path):
@@ -85,38 +99,58 @@ def prepare_dataset():
                 f"Input CSV not found: {CSV_FILE}. Put the CSV in the raw data folder or set CSV_FILE to the correct file."
             )
 
-        inp = deque()
+        preview_csv(CSV_FILE)
+
+        inp = deque(maxlen=4096)
         stop_event = threading.Event()
-        extractor = TrialExtractor(inp, stop_event, max_output_len=None)
+        extractor = TrialExtractor(inp, stop_event, max_output_len=4096, channel_idxs=BAND_CHANNELS)
         extractor.start()
 
-        with open(CSV_FILE, newline='') as f:
-            reader = csv.reader(f)
-            next(reader, None)
-            for row in reader:
-                trial_row = build_trial_row(row)
-                if trial_row is not None:
-                    inp.append(trial_row)
+        output_queue = deque(maxlen=4096)
+        writer = CSVStreamWriter(output_queue, OUTPUT_DATA, header=CSV_COLUMNS, stop_event=stop_event)
+        writer.start()
 
-        while inp:
-            time.sleep(0.01)
+        try:
+            with open(CSV_FILE, newline='') as f:
+                reader = csv.reader(f)
+                next(reader, None)
+                for row in reader:
+                    trial_row = build_trial_row(row)
+                    if trial_row is not None:
+                        inp.append(trial_row)
 
-        stop_event.set()
-        extractor.join(timeout=5.0)
+            while inp:
+                time.sleep(0.01)
 
-        rows = []
-        for entry in extractor.extracted_bands:
-            if len(entry) != len(CSV_COLUMNS):
-                continue
-            rows.append(entry)
+            while extractor.is_alive() or extractor.extracted_bands:
+                while extractor.extracted_bands:
+                    try:
+                        output_queue.append(extractor.extracted_bands.popleft())
+                    except Exception:
+                        break
+                if not extractor.is_alive() and not extractor.extracted_bands:
+                    break
+                time.sleep(0.01)
 
-        if not rows:
+            stop_event.set()
+            extractor.join(timeout=5.0)
+            while output_queue:
+                time.sleep(0.01)
+            writer.join(timeout=5.0)
+
+        finally:
+            stop_event.set()
+            extractor.join(timeout=5.0)
+            writer.join(timeout=5.0)
+
+        if not os.path.exists(OUTPUT_DATA):
             raise ValueError(
                 "TrialExtractor produced no rows. This usually means the CSV is missing, empty, header-only, or the marker/row format does not match the expected [timestamp, ch1..ch8, marker] layout."
             )
 
-        stream_dataset(rows)
         df = pd.read_csv(OUTPUT_DATA)
+        if df.empty:
+            raise ValueError(f"Dataset {OUTPUT_DATA} is empty")
         print(f"Wrote dataset to {OUTPUT_DATA}")
         return df
 
@@ -136,10 +170,16 @@ def main():
     label_col = 'label'
     feature_cols = [col for col in df.columns if col not in {'timestamp', label_col}]
     X = df[feature_cols]
-    y = df[label_col]
+    y = df[label_col].astype(int).to_numpy().reshape(-1)
+    if y.ndim != 1:
+        y = y.ravel()
+    allowed = {0, 1, 2, 3}
+    bad = sorted({int(v) for v in np.unique(y) if int(v) not in allowed})
+    if bad:
+        raise ValueError(f"Training labels must be one integer label per trial in {{0,1,2,3}}; found invalid labels {bad}")
 
     trainer = BPTrainer(MODEL_PATH)
-    for features, label in zip(X.to_numpy().tolist(), y.to_numpy().tolist()):
+    for features, label in zip(X.to_numpy().tolist(), y.tolist()):
         trainer.add_data(features, int(label))
 
     trainer.train()

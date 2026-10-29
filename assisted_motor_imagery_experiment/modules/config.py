@@ -9,7 +9,7 @@ BAND_WINDOW_SIZE_SEC = 0.25
 BAND_WINDOW_SIZE_SAMPLES = int(BAND_WINDOW_SIZE_SEC * FS)
 BAND_WINDOW_STEP_SEC = 1.0/FS
 BAND_WINDOW_STEP_SAMPLES = int(BAND_WINDOW_STEP_SEC * FS)
-BAND_CHANNELS = [3, 4, 5, 6]
+BAND_CHANNELS = [2, 3, 4, 5] # CH3..CH6, using CH1 as index 0 in the data stream
 BAND_CHANNEL_PADDING_SEC = 0.1
 BAND_CHANNEL_PADDING_SAMPLES = int(BAND_CHANNEL_PADDING_SEC * FS)
 #For live
@@ -69,8 +69,10 @@ MERGE_THRESHOLD = 0.002  # seconds threshold for aligning EEG and marker timesta
 POLL_SLEEP = 0.001      # sleep time between polls in collector loop
 
 # File/directories
-RAW_DATA_DIR = "data/raw"
+RAW_DATA_DIR = os.path.join("data", "raw")
+PROCESSED_DATA_DIR = os.path.join("data", "processed")
 os.makedirs(RAW_DATA_DIR, exist_ok=True)
+os.makedirs(PROCESSED_DATA_DIR, exist_ok=True)
 
 # Neurofeedback Parameters
 MU_BAND = (8, 12)       # Mu frequency band (Hz)
