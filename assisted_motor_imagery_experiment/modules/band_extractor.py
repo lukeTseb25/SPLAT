@@ -124,7 +124,7 @@ class TrialExtractor(threading.Thread):
 	"""Threaded trial extractor.
 
 	Consumes rows shaped like [timestamp, channel_1, ..., marker] and emits labeled bands
-	with the form {"timestamp": ts, "bands": {"mu": [...], "beta": [...]}, "marker": marker, "label": label}.
+	with the form {"timestamp": ts, "bands": {"mu": [...], "beta": [...]}, "label": label}.
 	"""
 
 	def __init__(self, input_deque: deque, stop_event: threading.Event, fs: int = FS, max_output_len: int | None = None, channel_idxs=None):
@@ -162,12 +162,6 @@ class TrialExtractor(threading.Thread):
 			except (TypeError, ValueError):
 				continue
 		return timestamp, channels, marker
-
-	def _normalize_marker(self, marker):
-		if marker is None:
-			return None
-		marker_str = str(marker).strip()
-		return marker_str if marker_str != "" else None
 
 	def _advance_past_marker(self, marker_idx):
 		for _ in range(marker_idx + 1):
@@ -217,10 +211,7 @@ class TrialExtractor(threading.Thread):
 						selected = [float(sample[i]) for i in self.channel_idxs if i < len(sample)]
 				except Exception:
 					continue
-				marker = self._normalize_marker(marker)
-				if marker is not None:
-					self.last_marker = marker
-					self.last_marker_ts = ts
+				marker = marker_to_label(marker)
 				self.buffer.append((ts, selected, marker))
 				while len(self.buffer) >= self.window_size:
 					window_items = list(self.buffer)[: self.window_size]
@@ -229,7 +220,7 @@ class TrialExtractor(threading.Thread):
 					marker_in_window_idx = None
 					marker_in_window = None
 					for idx, item in enumerate(window_items):
-						m = self._normalize_marker(item[2])
+						m = marker_to_label(item[2])
 						if m is not None:
 							marker_in_window_idx = idx
 							marker_in_window = m
@@ -242,17 +233,28 @@ class TrialExtractor(threading.Thread):
 					if (
 						self.last_marker is not None
 						and self.last_marker_ts is not None
-						and self.last_marker in {MARKER_RIGHT, MARKER_LEFT, MARKER_LEG, MARKER_NO_MOVEMENT}
 						and 0 <= (window_start_ts - self.last_marker_ts) < BAND_CHANNEL_PADDING_SEC
 					):
 						for _ in range(self.step_size):
 							if self.buffer:
-								self.buffer.popleft()
+								#Add marker collection logic for markers in step but not in window
+								temp = self.buffer.popleft()
+								m = marker_to_label(temp[2])
+								if m is not None:
+									self.last_marker = m
+									self.last_marker_ts = temp[0]
 						break
 					self._compute_and_store(window_end_ts, self.last_marker)
 					for _ in range(self.step_size):
 						if self.buffer:
 							self.buffer.popleft()
+							#Add marker collection logic for markers in step but not in window
+							temp = self.buffer.popleft()
+							m = marker_to_label(temp[2])
+							if m is not None:
+								self.last_marker = m
+								self.last_marker_ts = temp[0]
+
 			if not consumed:
 				if self.stop_event.is_set():
 					break

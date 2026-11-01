@@ -27,16 +27,25 @@ class BPTrainer:
         y = np.asarray(list(self.labels), dtype=int).reshape(-1)
         if y.ndim != 1:
             y = y.ravel()
-        unique = np.unique(y)
+
         allowed = np.array([0, 1, 2, 3], dtype=int)
+        unique = np.unique(y)
         bad = unique[~np.isin(unique, allowed)]
         if len(bad) > 0:
             raise ValueError(f"Label values must all be in {{0,1,2,3}}; got {sorted(unique.tolist())} and invalid labels {sorted(bad.tolist())}")
 
-        num_classes = int(np.max(unique)) + 1 if len(unique) else 1
+        missing = [int(v) for v in allowed if v not in unique]
+        if missing:
+            raise ValueError(
+                f"Training data is missing expected class labels {allowed.tolist()}. "
+                f"Observed labels: {sorted(unique.tolist())}; missing labels: {missing}."
+            )
+
+        # The model must be configured for 4-class training; if a subset of 0..3 is missing,
+        # we fail early instead of silencing the issue and letting XGBoost infer a binary model.
         self.model = XGBClassifier(
             objective="multi:softmax",
-            num_class=num_classes,
+            num_class=4,
             eval_metric="mlogloss",
             n_estimators=200,
             learning_rate=0.05,

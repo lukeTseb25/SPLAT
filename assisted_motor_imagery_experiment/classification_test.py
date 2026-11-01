@@ -13,7 +13,7 @@ from modules.config import *
 from modules.csv_stream_writer import CSVStreamWriter
 
 
-DO_EXTRACTION = False
+DO_EXTRACTION = True
 DO_TRAIN = True
 
 CSV_FILE = os.path.join(RAW_DATA_DIR, "SaraReach3sorted_MI_EEG_20261027_185615.csv")
@@ -66,21 +66,6 @@ def build_trial_row(row):
 
     marker = row[1 + NUM_CHANNELS] if len(row) > 1 + NUM_CHANNELS else ""
     return [ts] + channels + [marker]
-
-
-def save_dataset(df):
-    os.makedirs(os.path.dirname(OUTPUT_DATA), exist_ok=True)
-    df.to_csv(OUTPUT_DATA, index=False)
-
-
-def stream_extracted_rows(extractor, output_queue, stop_event, poll_interval=0.01):
-    while not (stop_event.is_set() and not extractor.extracted_bands and not output_queue):
-        while extractor.extracted_bands:
-            try:
-                output_queue.append(extractor.extracted_bands.popleft())
-            except Exception:
-                break
-        time.sleep(poll_interval)
 
 
 def read_dataset(path):
