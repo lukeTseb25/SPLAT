@@ -112,8 +112,13 @@ def marker_to_label(marker_str):
 	if marker_str is None:
 		return None
 	m = str(marker_str).strip()
+	# Dov fix: I would have added decimal-form STOP handling, but am leaving it commented out.
+	# This proposed replacement would return None for both "4" and "4.0":
+	# if m in ("4", "4.0"):
+	#	return None
+	# Dov fix: Keep valid indentation for the existing STOP handling.
 	if m == "4":
-		return 0
+		return None
 	try:
 		return int(m)
 	except Exception:
@@ -202,6 +207,13 @@ class TrialExtractor(threading.Thread):
 				except Exception:
 					break
 				ts, sample, marker = self._parse_row(row)
+				# Dov fix: STOP clears the previous behavioral label and buffered EEG.
+				if str(marker).strip() in ("4", "4.0"):
+					self.last_marker = None
+					self.last_marker_ts = None
+					self.buffer.clear()
+					continue
+
 				if not sample:
 					continue
 				try:
@@ -211,8 +223,11 @@ class TrialExtractor(threading.Thread):
 						selected = [float(sample[i]) for i in self.channel_idxs if i < len(sample)]
 				except Exception:
 					continue
+
 				marker = marker_to_label(marker)
 				self.buffer.append((ts, selected, marker))
+
+
 				while len(self.buffer) >= self.window_size:
 					window_items = list(self.buffer)[: self.window_size]
 					window_start_ts = window_items[0][0]
@@ -237,7 +252,7 @@ class TrialExtractor(threading.Thread):
 					):
 						for _ in range(self.step_size):
 							if self.buffer:
-								#Add marker collection logic for markers in step but not in window
+								# Dov fix: Inspect each removed sample for a behavioral marker.
 								temp = self.buffer.popleft()
 								m = marker_to_label(temp[2])
 								if m is not None:
@@ -247,8 +262,7 @@ class TrialExtractor(threading.Thread):
 					self._compute_and_store(window_end_ts, self.last_marker)
 					for _ in range(self.step_size):
 						if self.buffer:
-							self.buffer.popleft()
-							#Add marker collection logic for markers in step but not in window
+							# Dov fix: Pop once and inspect that same sample so markers are never skipped.
 							temp = self.buffer.popleft()
 							m = marker_to_label(temp[2])
 							if m is not None:
