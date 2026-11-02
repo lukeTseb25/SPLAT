@@ -137,7 +137,10 @@ class TrialExtractor(threading.Thread):
 		self.channel_idxs = list(channel_idxs) if channel_idxs is not None else None
 		self.buffer = deque()
 		self.last_marker = None
-		self.last_marker_ts = None
+		# Dov fix: Track EEG sample positions instead of a separate marker timestamp.
+		self.last_marker_sample = None
+		self.sample_count = 0
+		self.buffer_start_sample = 0
 		self.extracted_bands = deque(maxlen=max_output_len)
 		self._log = logging.getLogger(self.__class__.__name__)
 
@@ -211,49 +214,30 @@ class TrialExtractor(threading.Thread):
 						selected = [float(sample[i]) for i in self.channel_idxs if i < len(sample)]
 				except Exception:
 					continue
-				marker = marker_to_label(marker)
-				self.buffer.append((ts, selected, marker))
+
+				# Dov fix: Observe transitions on arrival; marker-only rows remain skipped above.
+				label = marker_to_label(marker)
+				if label is not None or marker in ("4", "4.0"):
+					self.last_marker = label
+					self.last_marker_sample = self.sample_count
+				self.buffer.append((ts, selected, label))
+				self.sample_count += 1
+
 				while len(self.buffer) >= self.window_size:
-					window_items = list(self.buffer)[: self.window_size]
-					window_start_ts = window_items[0][0]
-					window_end_ts = window_items[-1][0]
-					marker_in_window_idx = None
-					marker_in_window = None
-					for idx, item in enumerate(window_items):
-						m = marker_to_label(item[2])
-						if m is not None:
-							marker_in_window_idx = idx
-							marker_in_window = m
-							break
-					if marker_in_window_idx is not None:
-						self.last_marker = marker_in_window
-						self.last_marker_ts = window_items[marker_in_window_idx][0]
-						self._advance_past_marker(marker_in_window_idx)
-						break
+					# Dov fix: Count real EEG samples for padding; never flush at a transition.
+					padding_samples = max(0, int(round(BAND_CHANNEL_PADDING_SEC * self.fs)))
 					if (
 						self.last_marker is not None
-						and self.last_marker_ts is not None
-						and 0 <= (window_start_ts - self.last_marker_ts) < BAND_CHANNEL_PADDING_SEC
+						and self.last_marker_sample is not None
+						and self.buffer_start_sample >= self.last_marker_sample + padding_samples
 					):
-						for _ in range(self.step_size):
-							if self.buffer:
-								#Add marker collection logic for markers in step but not in window
-								temp = self.buffer.popleft()
-								m = marker_to_label(temp[2])
-								if m is not None:
-									self.last_marker = m
-									self.last_marker_ts = temp[0]
-						break
-					self._compute_and_store(window_end_ts, self.last_marker)
-					for _ in range(self.step_size):
-						if self.buffer:
-							self.buffer.popleft()
-							#Add marker collection logic for markers in step but not in window
-							temp = self.buffer.popleft()
-							m = marker_to_label(temp[2])
-							if m is not None:
-								self.last_marker = m
-								self.last_marker_ts = temp[0]
+						# Dov fix: Output time comes from the window's existing EEG sample.
+						window_end_ts = self.buffer[self.window_size - 1][0]
+						self._compute_and_store(window_end_ts, self.last_marker)
+					# Dov fix: Advance only by the configured step, including while waiting.
+					for _ in range(min(self.step_size, len(self.buffer))):
+						self.buffer.popleft()
+						self.buffer_start_sample += 1
 
 			if not consumed:
 				if self.stop_event.is_set():
