@@ -205,6 +205,20 @@ class TrialExtractor(threading.Thread):
 				except Exception:
 					break
 				ts, sample, marker = self._parse_row(row)
+
+				# Hrishi Edited: Safety check but unlikely to happen
+				if ts is None:
+					continue
+
+				# Hrishi Edited: Record the boundary first, so marker-only rows still count.
+				label = marker_to_label(marker)
+				if label is not None or marker in ("4", "4.0"):
+					self.last_marker = label
+					self.last_marker_sample = self.sample_count
+					self._log.info("marker %r -> label %s at ts=%.4f (sample %d)",
+					               marker, label, ts, self.sample_count)
+
+				# Hrishi Edited: After recording boundaries
 				if not sample:
 					continue
 				try:
@@ -215,11 +229,6 @@ class TrialExtractor(threading.Thread):
 				except Exception:
 					continue
 
-				# Dov fix: Observe transitions on arrival; marker-only rows remain skipped above.
-				label = marker_to_label(marker)
-				if label is not None or marker in ("4", "4.0"):
-					self.last_marker = label
-					self.last_marker_sample = self.sample_count
 				self.buffer.append((ts, selected, label))
 				self.sample_count += 1
 
