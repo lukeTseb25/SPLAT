@@ -65,7 +65,7 @@ MARKER_FAIL = "5"   # failed to add marker
 RAW_DATA_DIR = "./data/raw"
 
 # Data collection parameters
-MERGE_THRESHOLD = 0.002  # seconds threshold for aligning EEG and marker timestamps
+MERGE_THRESHOLD = 1.0 / FS   # seconds threshold for aligning EEG and marker timestamps
 POLL_SLEEP = 0.001      # sleep time between polls in collector loop
 
 # File/directories
