@@ -1,8 +1,8 @@
-# Band Extractor — Problem Specification
+# Trial Extractor — Problem Specification
 
 ## Overview
 
-The **Band Extractor** converts a continuous, timestamped EEG data stream into discrete, labeled trial windows suitable for classifier training and evaluation. Each trial window undergoes a band-power calculation across a fixed subset of EEG channels. The label assigned to a trial is derived from the **most recent marker** observed in the stream prior to (or at) the trial's extraction point.
+The **Trial Extractor** converts a continuous, timestamped EEG data stream into discrete, labeled trial windows suitable for classifier training and evaluation. Each trial window undergoes a band-power calculation across a fixed subset of EEG channels. The label assigned to a trial is derived from the **most recent marker** observed in the stream prior to (or at) the trial's extraction point.
 
 ## Input Data Stream
 

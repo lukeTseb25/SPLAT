@@ -188,7 +188,7 @@ def run_neurofeedback_experiment(neurofeedback_processor):
             neurofeedback_processor.set_active_hand(hand)
             
             # Update the channel indicator
-            channel_used = "CH3" if hand == "right" else "CH6"
+            channel_used = "CH6" if hand == "right" else "CH5"
             channel_text.text = f"Using {channel_used} (Contralateral Hemisphere)"
         else:
             # For no-movement trials, display both channels

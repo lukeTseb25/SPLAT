@@ -202,13 +202,13 @@ def run_motor_imagery_experiment(neurofeedback_processor=None):
 		if neurofeedback_processor:
 			if limb == "right arm":
 				neurofeedback_processor.set_active_hand("right")
-				channel_text.text = "Using CH3 (Contralateral Hemisphere)"
+				channel_text.text = "Using CH5 (Contralateral Hemisphere)"
 			elif limb == "left arm":
 				neurofeedback_processor.set_active_hand("left")
 				channel_text.text = "Using CH6 (Contralateral Hemisphere)"
 			elif limb == "right leg":
 				neurofeedback_processor.set_active_hand("right")
-				channel_text.text = "Using CH3 (Contralateral Hemisphere)"
+				channel_text.text = "Using CH5 (Contralateral Hemisphere)"
 		
 		# Display get ready message with wall clock timing
 		ready_start = perf_counter()

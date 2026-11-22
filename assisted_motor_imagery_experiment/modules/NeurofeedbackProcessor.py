@@ -45,7 +45,7 @@ class NeurofeedbackProcessor:
         self.max_observed_erd_beta = MAX_INITIAL_ERD  # Same for beta
         self.is_collecting_baseline = False
         self.is_processing = False
-        self.channel_index = 2  # Default to CH3 (index 2)
+        self.channel_index = 4  # Default to CH5 (index 4)
         self.active_hand = "right"  # Default hand
         
         # Smoothing variables for visual feedback
@@ -71,13 +71,13 @@ class NeurofeedbackProcessor:
     def set_active_hand(self, hand):
         """Set the active hand for the current trial."""
         self.active_hand = hand
-        # Use contralateral hemisphere: left hand -> right hemisphere (CH6), right hand -> left hemisphere (CH3)
+        # Use contralateral hemisphere: left hand -> right hemisphere (CH6), right hand -> left hemisphere (CH5)
         if hand == "no_movement":
             # For no-movement trials, use both channels or a default channel
-            self.channel_index = 2  # Default to CH3 (can be modified as needed)
+            self.channel_index = 4  # Default to CH5 (can be modified as needed)
             logging.info(f"No movement trial, using channel {EEG_CHANNELS[self.channel_index]} for baseline")
         else:
-            self.channel_index = 5 if hand == "left" else 2  # CH6 (index 5) or CH3 (index 2)
+            self.channel_index = 5 if hand == "left" else 4  # CH6 (index 5) or CH5 (index 4)
             logging.info(f"Active hand set to {hand}, using channel {EEG_CHANNELS[self.channel_index]}")
         
     def start_initial_baseline_collection(self):
