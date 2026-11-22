@@ -102,7 +102,7 @@ def compute_erd_ers(epoch, fs, band, baseline_samples):
 # -------------------------
 # ---- MAIN PIPELINE	-----
 # -------------------------
-filename = "sorted_MI_EEG_20260503_PranatiLast.csv"
+filename = "sorted_MI_EEG_20260927_183514_Sara_Reach.csv"
 filepath = os.path.abspath(os.path.join("data", "raw", filename))
 
 
