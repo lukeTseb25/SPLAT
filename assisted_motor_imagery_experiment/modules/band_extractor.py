@@ -108,6 +108,7 @@ class BandExtractor(threading.Thread):
 		self._log.info("BandExtractor stopped")
 
 
+# Do not change this fuction's mapping or I will tweak tf out
 def marker_to_label(marker_str):
 	if marker_str is None:
 		return None
