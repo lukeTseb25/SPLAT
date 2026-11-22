@@ -10,10 +10,9 @@ from modules.config import *
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 import matplotlib.pyplot as plt
 
-
-CSV_FILE = os.path.join(RAW_DATA_DIR, "sorted_MI_EEG_20260503_PranatiLast.csv")
-OUTPUT_FEATURES = os.path.join("data", "processed", "output_sorted_MI_EEG_20260503_PranatiLast.csv")
-OUTPUT_LABELS = os.path.join("data", "processed", "labels_sorted_MI_EEG_20260503_PranatiLast.csv")
+CSV_FILE = os.path.join(RAW_DATA_DIR, "SaraGrip_MI_EEG_20261101_181553.csv")
+OUTPUT_FEATURES = os.path.join("data", "processed", "output_sorted_MI_EEG_20261101_181553.csv")
+OUTPUT_LABELS = os.path.join("data", "processed", "labels_sorted_MI_EEG_20261101_181553.csv")
 
 
 def marker_to_label(marker_str):
@@ -85,7 +84,7 @@ def main():
     print(f"Wrote features to {OUTPUT_FEATURES} and labels to {OUTPUT_LABELS}")
 
     # Run classifier module and capture results for printing/figures
-    import bp_classifier
+    import assisted_motor_imagery_experiment.bp_classifier as bp_classifier
     try:
         pipeline, results = bp_classifier.main()
     except Exception as e:
