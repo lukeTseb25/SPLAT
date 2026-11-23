@@ -6,6 +6,8 @@ from collections import deque
 
 import numpy as np
 import pandas as pd
+from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.model_selection import train_test_split
 
 from modules.band_extractor import TrialExtractor
 from modules.bp_trainer import BPTrainer
@@ -150,6 +152,9 @@ def prepare_dataset():
 def main():
     df = prepare_dataset()
 
+    if DO_EVAL and not DO_TRAIN:
+        raise ValueError("Evaluation requires training: set DO_TRAIN=True before DO_EVAL=True")
+
     if not DO_TRAIN:
         return
 
@@ -163,14 +168,31 @@ def main():
     bad = sorted({int(v) for v in np.unique(y) if int(v) not in allowed})
     if bad:
         raise ValueError(f"Training labels must be one integer label per trial in {{0,1,2,3}}; found invalid labels {bad}")
+    
+    X_train, X_test, y_train, y_test = train_test_split(
+        X.to_numpy(),
+        y,
+        test_size=0.2,
+        random_state=42,
+        stratify=y,
+    )
 
     trainer = BPTrainer(MODEL_PATH)
-    for features, label in zip(X.to_numpy().tolist(), y.tolist()):
+    for features, label in zip(X_train.tolist(), y_train.tolist()):
         trainer.add_data(features, int(label))
 
-    trainer.train()
+    trainer.train(test_size=0)
     trainer.save_model()
     print(f"Trained model saved to {MODEL_PATH}")
+
+    if DO_EVAL:
+        y_pred = trainer.model.predict(X_test)
+        accuracy = trainer.evaluate(X_test, y_test)
+        print(f"\nTest Accuracy: {accuracy:.4f}")
+        print("\nClassification Report:")
+        print(classification_report(y_test, y_pred))
+        print("\nConfusion Matrix:")
+        print(confusion_matrix(y_test, y_pred))
 
 
 if __name__ == "__main__":
