@@ -15,7 +15,7 @@ from modules.config import *
 from modules.csv_stream_writer import CSVStreamWriter
 
 
-DO_EXTRACTION = True
+DO_EXTRACTION = False
 DO_TRAIN = True
 DO_EVAL = True
 DO_RANDOM_UNDERSAMPLING = False
@@ -35,6 +35,7 @@ def build_header(channel_idxs=None):
 
 
 CSV_COLUMNS = build_header(BAND_CHANNELS)
+INPUT_BUFFER_CAPACITY = 4096
 
 
 def preview_csv(path, max_rows=10):
@@ -73,6 +74,14 @@ def build_trial_row(row):
     return [ts] + channels + [marker]
 
 
+def _drain_extractor_output(extractor, output_queue):
+    while True:
+        try:
+            output_queue.append(extractor.extracted_bands.popleft())
+        except IndexError:
+            return
+
+
 def read_dataset(path):
     if not os.path.exists(path):
         raise FileNotFoundError(f"Dataset not found: {path}")
@@ -91,12 +100,12 @@ def prepare_dataset():
 
         preview_csv(CSV_FILE)
 
-        inp = deque(maxlen=4096)
+        inp = deque()
         stop_event = threading.Event()
-        extractor = TrialExtractor(inp, stop_event, max_output_len=4096, channel_idxs=BAND_CHANNELS)
+        extractor = TrialExtractor(inp, stop_event, channel_idxs=BAND_CHANNELS)
         extractor.start()
 
-        output_queue = deque(maxlen=4096)
+        output_queue = deque()
         writer = CSVStreamWriter(output_queue, OUTPUT_DATA, header=CSV_COLUMNS, stop_event=stop_event)
         writer.start()
 
@@ -107,9 +116,22 @@ def prepare_dataset():
                 for row in reader:
                     trial_row = build_trial_row(row)
                     if trial_row is not None:
+                        while len(inp) >= INPUT_BUFFER_CAPACITY:
+                            if not extractor.is_alive():
+                                raise RuntimeError(
+                                    "TrialExtractor stopped before all input rows were queued"
+                                )
+                            _drain_extractor_output(extractor, output_queue)
+                            time.sleep(0.01)
                         inp.append(trial_row)
+                        _drain_extractor_output(extractor, output_queue)
 
             while inp:
+                if not extractor.is_alive():
+                    raise RuntimeError(
+                        "TrialExtractor stopped before all input rows were processed"
+                    )
+                _drain_extractor_output(extractor, output_queue)
                 time.sleep(0.01)
 
             # Signal end-of-input before waiting. The extractor will drain complete
@@ -117,11 +139,7 @@ def prepare_dataset():
             stop_event.set()
 
             while extractor.is_alive() or extractor.extracted_bands:
-                while extractor.extracted_bands:
-                    try:
-                        output_queue.append(extractor.extracted_bands.popleft())
-                    except Exception:
-                        break
+                _drain_extractor_output(extractor, output_queue)
                 if not extractor.is_alive() and not extractor.extracted_bands:
                     break
                 time.sleep(0.01)
