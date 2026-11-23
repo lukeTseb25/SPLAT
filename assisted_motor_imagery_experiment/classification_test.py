@@ -12,11 +12,6 @@ from modules.bp_trainer import BPTrainer
 from modules.config import *
 from modules.csv_stream_writer import CSVStreamWriter
 
-<<<<<<< HEAD
-CSV_FILE = os.path.join(RAW_DATA_DIR, "SaraGrip_MI_EEG_20261101_181553.csv")
-OUTPUT_FEATURES = os.path.join("data", "processed", "output_sorted_MI_EEG_20261101_181553.csv")
-OUTPUT_LABELS = os.path.join("data", "processed", "labels_sorted_MI_EEG_20261101_181553.csv")
-=======
 
 DO_EXTRACTION = False
 DO_TRAIN = True
@@ -33,7 +28,6 @@ def build_header(channel_idxs=None):
         columns.extend([f"{channel_name}_mu", f"{channel_name}_beta"])
     columns.append("label")
     return columns
->>>>>>> aa438d4686ca75315d3e84938a8910e8cea95701
 
 
 CSV_COLUMNS = build_header(BAND_CHANNELS)
@@ -156,67 +150,7 @@ def prepare_dataset():
 def main():
     df = prepare_dataset()
 
-<<<<<<< HEAD
-    extractor = BandExtractor(inp, stop_event, max_output_len=100000)
-    extractor.start()
-
-    # feed CSV rows (skip header)
-    with open(CSV_FILE, newline='') as f:
-        reader = csv.reader(f)
-        header = next(reader, None)
-        for row in reader:
-            # Each row already in format: timestamp, ch1..ch8, marker
-            # Convert numeric fields where possible
-            try:
-                ts = float(row[0])
-            except Exception:
-                ts = None
-            # keep channel values as floats or empty
-            channels = []
-            for i in range(1, 1 + 8):
-                try:
-                    channels.append(float(row[i]))
-                except Exception:
-                    channels.append(0.0)
-            marker = row[1 + 8] if len(row) > 1 + 8 else ""
-            # push as list matching expected parser: [ts, ch1..ch8, marker]
-            inp.append([ts] + channels + [marker])
-
-    # signal no more incoming data
-    # allow extractor to finish processing buffered items
-    while inp:
-        time.sleep(0.01)
-
-    stop_event.set()
-    extractor.join(timeout=5.0)
-
-    # collect extracted bands and write features/labels
-    os.makedirs(os.path.dirname(OUTPUT_FEATURES), exist_ok=True)
-    with open(OUTPUT_FEATURES, 'w', newline='') as fx, open(OUTPUT_LABELS, 'w', newline='') as fy:
-        writer_fx = csv.writer(fx)
-        writer_fy = csv.writer(fy)
-        for entry in extractor.extracted_bands:
-            marker = entry.get('marker', '')
-            label = marker_to_label(marker)
-            if label is None:
-                continue
-            mu = entry.get('mu', [])
-            beta = entry.get('beta', [])
-            row = list(mu) + list(beta)
-            writer_fx.writerow(row)
-            writer_fy.writerow([label])
-
-    print(f"Wrote features to {OUTPUT_FEATURES} and labels to {OUTPUT_LABELS}")
-
-    # Run classifier module and capture results for printing/figures
-    import assisted_motor_imagery_experiment.bp_classifier as bp_classifier
-    try:
-        pipeline, results = bp_classifier.main()
-    except Exception as e:
-        print("bp_classifier.main() raised an exception:", e)
-=======
     if not DO_TRAIN:
->>>>>>> aa438d4686ca75315d3e84938a8910e8cea95701
         return
 
     label_col = 'label'
