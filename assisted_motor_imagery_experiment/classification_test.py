@@ -225,8 +225,10 @@ def main():
         cm = confusion_matrix(y_test, y_pred, labels=labels)
         print(cm)
 
+        log_cm = np.log1p(cm)
+
         plt.figure(figsize=(8, 6))
-        plt.imshow(cm, interpolation='nearest', cmap=plt.colormaps.get_cmap('Blues'))
+        plt.imshow(log_cm, interpolation='nearest', cmap=plt.colormaps.get_cmap('Blues'))
         plt.colorbar()
         tick_marks = np.arange(len(labels))
         plt.xticks(tick_marks, [str(label) for label in labels])
