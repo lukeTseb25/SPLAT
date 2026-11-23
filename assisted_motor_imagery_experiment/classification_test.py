@@ -6,6 +6,7 @@ from collections import deque
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.model_selection import train_test_split
 
@@ -220,7 +221,23 @@ def main():
         print("\nClassification Report:")
         print(classification_report(y_test, y_pred))
         print("\nConfusion Matrix:")
-        print(confusion_matrix(y_test, y_pred))
+        labels = sorted(allowed)
+        cm = confusion_matrix(y_test, y_pred, labels=labels)
+        print(cm)
+
+        plt.figure(figsize=(8, 6))
+        plt.imshow(cm, interpolation='nearest', cmap=plt.colormaps.get_cmap('Blues'))
+        plt.colorbar()
+        tick_marks = np.arange(len(labels))
+        plt.xticks(tick_marks, [str(label) for label in labels])
+        plt.yticks(tick_marks, [str(label) for label in labels])
+        plt.title('Confusion Matrix')
+        plt.ylabel('True Label')
+        plt.xlabel('Predicted Label')
+        plt.tight_layout()
+        plt.savefig('confusion_matrix.png', dpi=300)
+        plt.close()
+        print("\nConfusion matrix saved as 'confusion_matrix.png'")
 
 
 if __name__ == "__main__":
