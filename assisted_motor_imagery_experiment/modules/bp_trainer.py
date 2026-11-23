@@ -26,7 +26,34 @@ class BPTrainer:
         self.features.append(np.asarray(features, dtype=float).ravel())
         self.labels.append(int(labels))
 
-    def train(self, test_size=0.2, random_state=42):
+    def random_undersample(self, X, y, target_count=None, random_state=42):
+        X = np.asarray(X, dtype=float)
+        y = np.asarray(y, dtype=int).reshape(-1)
+        unique, counts = np.unique(y, return_counts=True)
+
+        if target_count is None:
+            target_count = int(counts.min())
+        if not isinstance(target_count, (int, np.integer)) or target_count < 1:
+            raise ValueError("Undersampling target count must be a positive integer")
+
+        rng = np.random.default_rng(random_state)
+        kept_indices = []
+        for label, count in zip(unique, counts):
+            label_indices = np.flatnonzero(y == label)
+            keep_count = min(int(count), int(target_count))
+            kept_indices.extend(rng.choice(label_indices, size=keep_count, replace=False).tolist())
+
+        kept_indices = rng.permutation(np.asarray(kept_indices, dtype=int))
+        return X[kept_indices], y[kept_indices]
+
+    def train(
+        self,
+        test_size=0.2,
+        random_state=42,
+        undersample=False,
+        undersample_target=None,
+        random_undersample=None,
+    ):
         if not self.features or not self.labels:
             raise ValueError("No data available for training")
 
@@ -49,6 +76,16 @@ class BPTrainer:
             )
         else:
             X_train, X_test, y_train, y_test = X, None, y, None
+
+        if random_undersample is not None:
+            undersample = random_undersample
+        if undersample:
+            X_train, y_train = self.random_undersample(
+                X_train,
+                y_train,
+                target_count=undersample_target,
+                random_state=random_state,
+            )
 
         # Print the number of samples for each label in the training set and the test set (if applicable)
         unique_train, counts_train = np.unique(y_train, return_counts=True)

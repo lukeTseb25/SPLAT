@@ -18,6 +18,8 @@ from modules.csv_stream_writer import CSVStreamWriter
 DO_EXTRACTION = False
 DO_TRAIN = True
 DO_EVAL = True
+DO_RANDOM_UNDERSAMPLING = True
+UNDERSAMPLING_TARGET = None  # None uses the smallest training-class count
 
 CSV_FILE = os.path.join(RAW_DATA_DIR, "SaraReach3sorted_MI_EEG_20261027_185615.csv")
 OUTPUT_DATA = os.path.join(PROCESSED_DATA_DIR, "extracted_SaraReach3sorted_MI_EEG_20261027_185615.csv")
@@ -181,7 +183,12 @@ def main():
     for features, label in zip(X_train.tolist(), y_train.tolist()):
         trainer.add_data(features, int(label))
 
-    trainer.train(test_size=0)
+    trainer.train(
+        test_size=0,
+        random_state=42,
+        undersample=DO_RANDOM_UNDERSAMPLING,
+        undersample_target=UNDERSAMPLING_TARGET,
+    )
     trainer.save_model()
     print(f"Trained model saved to {MODEL_PATH}")
 
