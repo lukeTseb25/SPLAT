@@ -142,6 +142,7 @@ class TrialExtractor(threading.Thread):
 		self.last_marker_sample = None
 		self.sample_count = 0
 		self.buffer_start_sample = 0
+		self.samples_to_skip = 0
 		self.extracted_bands = deque(maxlen=max_output_len)
 		self._log = logging.getLogger(self.__class__.__name__)
 
@@ -222,6 +223,11 @@ class TrialExtractor(threading.Thread):
 				# Hrishi Edited: After recording boundaries
 				if not sample:
 					continue
+				self.sample_count += 1
+				if self.samples_to_skip:
+					self.samples_to_skip -= 1
+					self.buffer_start_sample += 1
+					continue
 				try:
 					if self.channel_idxs is None:
 						selected = [float(value) for value in sample]
@@ -231,7 +237,6 @@ class TrialExtractor(threading.Thread):
 					continue
 
 				self.buffer.append((ts, selected, label))
-				self.sample_count += 1
 
 				while len(self.buffer) >= self.window_size:
 					# Dov fix: Count real EEG samples for padding; never flush at a transition.
@@ -244,10 +249,11 @@ class TrialExtractor(threading.Thread):
 						# Dov fix: Output time comes from the window's existing EEG sample.
 						window_end_ts = self.buffer[self.window_size - 1][0]
 						self._compute_and_store(window_end_ts, self.last_marker)
-					# Dov fix: Advance only by the configured step, including while waiting.
-					for _ in range(min(self.step_size, len(self.buffer))):
+					popped = min(self.step_size, len(self.buffer))
+					for _ in range(popped):
 						self.buffer.popleft()
 						self.buffer_start_sample += 1
+					self.samples_to_skip += self.step_size - popped
 
 			if not consumed:
 				if self.stop_event.is_set():

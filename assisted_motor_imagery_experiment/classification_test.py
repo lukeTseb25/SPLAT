@@ -13,8 +13,9 @@ from modules.config import *
 from modules.csv_stream_writer import CSVStreamWriter
 
 
-DO_EXTRACTION = True
+DO_EXTRACTION = False
 DO_TRAIN = True
+DO_EVAL = True
 
 CSV_FILE = os.path.join(RAW_DATA_DIR, "SaraReach3sorted_MI_EEG_20261027_185615.csv")
 OUTPUT_DATA = os.path.join(PROCESSED_DATA_DIR, "extracted_SaraReach3sorted_MI_EEG_20261027_185615.csv")

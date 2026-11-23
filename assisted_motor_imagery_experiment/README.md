@@ -75,7 +75,7 @@ For a valid window, the label is the **most recent marker value seen at or befor
    - Reject if any marker index falls in `[start, start + WINDOW_SIZE)`.
 4. **Band calculation** — For each channel in `BAND_CHANNELS`, compute the band quantity over the window. Channels outside `BAND_CHANNELS` are ignored.
 5. **Emission** — Output a labeled trial: `(window_start_timestamp, label, [band_value_ch1, …, band_value_chN])`.
-6. **Advance** — Pop **at least** `BAND_WINDOW_STEP_SAMPLES` from the front of the deque, then return to step 2. The "at least" wording is important: popping exactly `STEP` is the common case, but the loop must tolerate the deque having fewer than `STEP` samples after a partial fill and top up from the stream before the next evaluation.
+6. **Advance** — Move the next window start forward by exactly `BAND_WINDOW_STEP_SAMPLES` EEG samples. If the step is larger than the current window, discard the window and count down the remaining samples before buffering the next window. Rows are still consumed during this countdown, so marker-only rows update the active label and boundary.
 
 ## Diagram
 
@@ -97,9 +97,11 @@ flowchart TD
     I -- No --> J[Label = last_marker value]
     J --> K[For each ch in BAND_CHANNELS:<br/>compute band quantity]
     K --> L([Emit labeled trial])
-    X --> M[Pop ≥ STEP samples<br/>from deque front]
+    X --> M[Advance start by STEP samples]
     L --> M
-    M --> E
+    M --> N{Samples remain<br/>before next start?}
+    N -- Yes --> A
+    N -- No --> E
 ```
 
 ### Epoch timeline (conceptual)
@@ -148,4 +150,4 @@ The pop-minimum-stride rule makes all three cases a single code path — only th
 - **Partial deque at stream end**: a trailing partial window (fewer than `WINDOW_SIZE` samples) is not emitted.
 - **Popping and validity**: popping happens regardless of whether the candidate was valid or discarded — invalidity only suppresses emission, not the advance. This guarantees termination and a fixed stride through the stream.
 - **Gaps / irregular sampling**: because alignment is done in sample indices derived from the stream, timestamp gaps must be reconciled at ingestion (e.g., by index mapping) so that `PADDING` and `WINDOW_SIZE` comparisons remain in consistent units.
-- **Minimum pop semantics**: "pop a minimum of `STEP`" is implemented as: if `len(deque) ≥ STEP`, pop `STEP`; otherwise, wait for more stream samples, then pop. This avoids both under-advancing (which would re-emit the same window) and over-advancing (which would skip windows) when the stream feeds in uneven bursts.
+- **Stride semantics**: consecutive window starts are exactly `STEP` EEG samples apart. For `STEP > WINDOW_SIZE`, the samples between the end of one window and the next start are consumed without buffering; markers on those rows are still processed. For `STEP < WINDOW_SIZE`, only `STEP` samples are removed, preserving the overlap.
