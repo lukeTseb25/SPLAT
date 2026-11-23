@@ -15,7 +15,7 @@ from modules.config import *
 from modules.csv_stream_writer import CSVStreamWriter
 
 
-DO_EXTRACTION = False
+DO_EXTRACTION = True
 DO_TRAIN = True
 DO_EVAL = True
 DO_RANDOM_UNDERSAMPLING = False
@@ -112,6 +112,10 @@ def prepare_dataset():
             while inp:
                 time.sleep(0.01)
 
+            # Signal end-of-input before waiting. The extractor will drain complete
+            # windows already in its buffer, then stop.
+            stop_event.set()
+
             while extractor.is_alive() or extractor.extracted_bands:
                 while extractor.extracted_bands:
                     try:
@@ -122,7 +126,6 @@ def prepare_dataset():
                     break
                 time.sleep(0.01)
 
-            stop_event.set()
             extractor.join(timeout=5.0)
             while output_queue:
                 time.sleep(0.01)

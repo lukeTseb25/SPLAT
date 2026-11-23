@@ -145,6 +145,28 @@ class TrialExtractor(threading.Thread):
 		self.samples_to_skip = 0
 		self.extracted_bands = deque(maxlen=max_output_len)
 		self._log = logging.getLogger(self.__class__.__name__)
+		self.start_timestamp = None
+		self.last_progress_second = -1
+
+	def _format_progress(self, elapsed_seconds):
+		elapsed_seconds = max(0, int(elapsed_seconds))
+		minutes, seconds = divmod(elapsed_seconds, 60)
+		return f"{minutes:02d}:{seconds:02d}"
+
+	def _update_progress(self, timestamp):
+		if self.start_timestamp is None:
+			self.start_timestamp = timestamp
+			self.last_progress_second = -1
+
+		elapsed_seconds = int(max(0, timestamp - self.start_timestamp))
+		if elapsed_seconds > self.last_progress_second:
+			self.last_progress_second = elapsed_seconds
+			print(
+				f"\rTrialExtractor processed {self._format_progress(elapsed_seconds)} "
+				f"| buffer {len(self.buffer)}/{self.window_size}",
+				end="",
+				flush=True,
+			)
 
 	def _parse_row(self, row):
 		if not isinstance(row, (list, tuple, np.ndarray)):
@@ -197,6 +219,23 @@ class TrialExtractor(threading.Thread):
 		row.append(label)
 		self.extracted_bands.append(row)
 
+	def _process_available_windows(self):
+		"""Process every complete window remaining in the buffer."""
+		while len(self.buffer) >= self.window_size:
+			padding_samples = max(0, int(round(BAND_CHANNEL_PADDING_SEC * self.fs)))
+			if (
+				self.last_marker is not None
+				and self.last_marker_sample is not None
+				and self.buffer_start_sample >= self.last_marker_sample + padding_samples
+			):
+				window_end_ts = self.buffer[self.window_size - 1][0]
+				self._compute_and_store(window_end_ts, self.last_marker)
+			popped = min(self.step_size, len(self.buffer))
+			for _ in range(popped):
+				self.buffer.popleft()
+				self.buffer_start_sample += 1
+			self.samples_to_skip += self.step_size - popped
+
 	def run(self):
 		while not (self.stop_event.is_set() and not self.input_deque):
 			consumed = False
@@ -212,9 +251,11 @@ class TrialExtractor(threading.Thread):
 				if ts is None:
 					continue
 
+				self._update_progress(ts)
+
 				# Hrishi Edited: Record the boundary first, so marker-only rows still count.
 				label = marker_to_label(marker)
-				if label is not None or marker in ("4", "4.0"):
+				if label is not None:
 					self.last_marker = label
 					self.last_marker_sample = self.sample_count
 					self._log.info("marker %r -> label %s at ts=%.4f (sample %d)",
@@ -237,29 +278,18 @@ class TrialExtractor(threading.Thread):
 					continue
 
 				self.buffer.append((ts, selected, label))
-
-				while len(self.buffer) >= self.window_size:
-					# Dov fix: Count real EEG samples for padding; never flush at a transition.
-					padding_samples = max(0, int(round(BAND_CHANNEL_PADDING_SEC * self.fs)))
-					if (
-						self.last_marker is not None
-						and self.last_marker_sample is not None
-						and self.buffer_start_sample >= self.last_marker_sample + padding_samples
-					):
-						# Dov fix: Output time comes from the window's existing EEG sample.
-						window_end_ts = self.buffer[self.window_size - 1][0]
-						self._compute_and_store(window_end_ts, self.last_marker)
-					popped = min(self.step_size, len(self.buffer))
-					for _ in range(popped):
-						self.buffer.popleft()
-						self.buffer_start_sample += 1
-					self.samples_to_skip += self.step_size - popped
+				self._process_available_windows()
 
 			if not consumed:
 				if self.stop_event.is_set():
 					break
 				time.sleep(POLL_SLEEP)
 
+		# A stop signal means no more input is coming: drain every complete window
+		# already in the buffer instead of waiting for additional samples.
+		self._process_available_windows()
+		if self.start_timestamp is not None:
+			print()
 		self._log.info("TrialExtractor stopped")
 
 

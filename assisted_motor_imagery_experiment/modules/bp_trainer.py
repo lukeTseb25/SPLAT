@@ -64,7 +64,7 @@ class BPTrainer:
         unique = np.unique(y)
         bad = unique[~np.isin(unique, allowed)]
         if len(bad) > 0:
-            raise ValueError(f"Label values must all be in {{0,1,2,3}}; got {sorted(unique.tolist())} and invalid labels {sorted(bad.tolist())}")
+            raise ValueError(f"Label values must all be in {allowed.tolist()}; got {sorted(unique.tolist())} and invalid labels {sorted(bad.tolist())}")
 
         if test_size:
             X_train, X_test, y_train, y_test = train_test_split(
@@ -98,11 +98,11 @@ class BPTrainer:
         # we fail early instead of silencing the issue and letting XGBoost infer a binary model.
         self.model = XGBClassifier(
             objective="multi:softmax",
-            num_class=unique.size,
+            num_class=unique.size-bad.size,
             eval_metric="mlogloss",
             n_estimators=200,
             learning_rate=0.05,
-            max_depth=6,
+            max_depth=20,
             random_state=42,
         )
         self.model.fit(X_train, y_train)
