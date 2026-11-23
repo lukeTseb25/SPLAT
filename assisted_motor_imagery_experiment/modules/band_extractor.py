@@ -145,6 +145,34 @@ class TrialExtractor(threading.Thread):
 		self.extracted_bands = deque(maxlen=max_output_len)
 		self._log = logging.getLogger(self.__class__.__name__)
 
+		# Hrishi Edited: Next window start (EEG sample index). Set from each marker, then advanced by the step.
+		self.padding_samples = max(0, int(round(BAND_CHANNEL_PADDING_SEC * self.fs)))
+		self.next_start = float("inf")  # no windows before the first marker
+		# Clock estimate: LSL stamps EEG on arrival, so stamps run late in bursts.
+		# The earliest offset (ts - n/fs) over the last few seconds is the on-time clock.
+		self._offsets = deque()  # (sample index, offset), rising offsets
+		self._clock_span = int(DEJITTER_SEC * self.fs)
+
+	def _update_clock(self, ts):
+		n = self.sample_count
+		offset = ts - n / self.fs
+		while self._offsets and self._offsets[-1][1] >= offset:
+			self._offsets.pop()
+		self._offsets.append((n, offset))
+		while self._offsets[0][0] <= n - self._clock_span:
+			self._offsets.popleft()
+
+	def _sample_at(self, ts):
+		"""EEG sample index actually recorded at time ts (never one already buffered)."""
+		if not self._offsets:
+			return self.sample_count
+		n = int(round((ts - self._offsets[0][1]) * self.fs))
+		return max(self.sample_count, n)
+
+	def _time_of(self, n):
+		"""Dejittered time of EEG sample n."""
+		return self._offsets[0][1] + n / self.fs
+
 	def _parse_row(self, row):
 		if not isinstance(row, (list, tuple, np.ndarray)):
 			return None, [], ""
@@ -215,10 +243,15 @@ class TrialExtractor(threading.Thread):
 				label = marker_to_label(marker)
 				if label is not None or marker in ("4", "4.0"):
 					self.last_marker = label
-					self.last_marker_sample = self.sample_count
-					self._log.info("marker %r -> label %s at ts=%.4f (sample %d)",
-					               marker, label, ts, self.sample_count)
-
+					# Hrishi Edited" Boundary at the EEG sample recorded at the marker's time,
+					# not the row it was merged onto (that row's EEG was recorded earlier).
+					self.last_marker_sample = self._sample_at(ts)
+					# Spec: fixed grid from sample 0 (0, step, 2*step, ...);
+					# first grid point at least the padding after the cue.
+					earliest = self.last_marker_sample + self.padding_samples
+					self.next_start = -(-earliest / self.step_size) * self.step_size
+					self._log.info("marker %r -> label %s at ts=%.4f (row sample %d, boundary sample %d)",
+					               marker, label, ts, self.sample_count, self.last_marker_sample)
 				# Hrishi Edited: After recording boundaries
 				if not sample:
 					continue
@@ -230,24 +263,23 @@ class TrialExtractor(threading.Thread):
 				except Exception:
 					continue
 
+				# Hrishi Edited
+				self._update_clock(ts)
 				self.buffer.append((ts, selected, label))
 				self.sample_count += 1
 
-				while len(self.buffer) >= self.window_size:
-					# Dov fix: Count real EEG samples for padding; never flush at a transition.
-					padding_samples = max(0, int(round(BAND_CHANNEL_PADDING_SEC * self.fs)))
-					if (
-						self.last_marker is not None
-						and self.last_marker_sample is not None
-						and self.buffer_start_sample >= self.last_marker_sample + padding_samples
-					):
-						# Dov fix: Output time comes from the window's existing EEG sample.
-						window_end_ts = self.buffer[self.window_size - 1][0]
-						self._compute_and_store(window_end_ts, self.last_marker)
-					# Dov fix: Advance only by the configured step, including while waiting.
-					for _ in range(min(self.step_size, len(self.buffer))):
+				# Windows start at next_start, then every step_size samples.
+				# Samples before next_start are dropped as they arrive, so a step longer
+				# than the window is honoured.
+				while True:
+					while self.buffer and self.buffer_start_sample < self.next_start:
 						self.buffer.popleft()
 						self.buffer_start_sample += 1
+					if len(self.buffer) < self.window_size or self.last_marker is None:
+						break
+					window_end_ts = self._time_of(self.buffer_start_sample + self.window_size - 1)
+					self._compute_and_store(window_end_ts, self.last_marker)
+					self.next_start = self.buffer_start_sample + self.step_size
 
 			if not consumed:
 				if self.stop_event.is_set():
