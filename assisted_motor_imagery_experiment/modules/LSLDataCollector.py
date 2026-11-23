@@ -124,6 +124,15 @@ class LSLDataCollector(threading.Thread):
                             adjusted_ts_marker = ts_marker - self.clock_offset
                             marker_val = sample_marker[0]
                             self.marker_buffer.append((adjusted_ts_marker, marker_val))
+
+                            if str(marker_val).strip() == "0":
+                                logging.error("Marker '0' received. Killing experiment.")
+                                try:
+                                    self.flush_remaining(writer)
+                                except Exception:
+                                    logging.exception("Error flushing data before abort:")
+                                finally:
+                                        os._exit(1)
                     except Exception as e:
                         logging.exception("Error pulling Marker sample:")
 

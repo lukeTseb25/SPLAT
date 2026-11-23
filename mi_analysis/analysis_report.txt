@@ -1,0 +1,157 @@
+Motor-imagery session analysis
+Window 1 s, step 0.1 s; mu (8.0, 13.0) Hz, beta (13.0, 20.0) Hz; 200 shuffles per p-value
+
+==============================================================================
+SaraSession2_10-03-2026
+  51 trials (right arm 17, left arm 17, right leg 17); connected channels: CH3, CH4, CH5, CH6; imagery 6.0 s
+
+  A. Median % change, imagery 1.5 s-STOP vs rest  (* = significant decrease, p<0.05)
+                     mu CH3      mu CH4      mu CH5      mu CH6    beta CH3    beta CH4    beta CH5    beta CH6
+     right arm        +26%         +7%         +7%        +33%        +19%         +6%        +26%        -26% 
+     left arm         +44%        +32%        +28%        +13%        -21%        -21%        -26%*       -24%*
+     right leg        +28%        +17%        +17%        +52%        -24%*       -20%*       -32%*       -17% 
+
+  A. Median % change, imagery 1.5 s-STOP vs Get Ready  (* = significant decrease, p<0.05)
+                     mu CH3      mu CH4      mu CH5      mu CH6    beta CH3    beta CH4    beta CH5    beta CH6
+     right arm        -16%*       -26%*       -32%*       -20%         -6%        -26%*       -23%*       -26%*
+     left arm          -7%        -18%        -10%        -13%        -21%        -21%*       -25%*       -20%*
+     right leg        +43%        +13%        +36%         +1%        -15%*       -21%*       -11%*       -21%*
+
+  B. FIXED TEST: mu, CH5 minus CH6, imagery 1.5 s-STOP vs rest
+     accuracy 19/34 = 56%  (p=0.304, chance 50%)  AUC 0.60  [right arm 65% correct, left arm 47%]
+
+     Other left-minus-right settings (exploratory; expect some to look good by chance):
+     mu   CH3-CH4  vs rest: 47% (AUC 0.44)   vs Get Ready: 50% (AUC 0.53)
+     beta CH3-CH4  vs rest: 47% (AUC 0.43)   vs Get Ready: 50% (AUC 0.46)
+     mu   CH5-CH6  vs rest: 56% (AUC 0.60)   vs Get Ready: 59% (AUC 0.59)
+     beta CH5-CH6  vs rest: 50% (AUC 0.40)   vs Get Ready: 44% (AUC 0.40)
+
+  C. Imagery vs no imagery, beta in all connected channels (chance 50%)
+     imagery 1.5 s-STOP vs rest      : LDA  65% (p=0.010)*
+     imagery 1.5 s-STOP vs Get Ready : LDA  72% (p=0.005)*
+
+  D. Limb classification, mu + beta power during imagery
+     LDA            3 limbs  48% (p=0.100)  (chance 33%)   right vs left arm  60% (p=0.164)  (chance 50%)
+
+  E. Right leg vs arms (mu, imagery vs rest)
+     mean of connected channels: leg +30%, arms +15%, AUC 0.61 (p=0.212)
+     midline minus lateral: AUC 0.57 (p=0.198; >0.5 = leg changes more at the midline)
+
+==============================================================================
+SaraReach3sorted_MI_EEG_20261027_185615
+  51 trials (right arm 17, left arm 17, right leg 17); connected channels: CH3, CH4, CH5, CH6; imagery 6.0 s
+
+  A. Median % change, imagery 1.5 s-STOP vs rest  (* = significant decrease, p<0.05)
+                     mu CH3      mu CH4      mu CH5      mu CH6    beta CH3    beta CH4    beta CH5    beta CH6
+     right arm        +21%         +9%        -11%        +20%         -7%         -7%         -6%        -10% 
+     left arm          -7%         +7%         +8%         +6%         -7%         +1%        -10%        -14% 
+     right leg         -1%         +1%        -17%*       +17%        -11%         +2%        +11%         -2% 
+
+  A. Median % change, imagery 1.5 s-STOP vs Get Ready  (* = significant decrease, p<0.05)
+                     mu CH3      mu CH4      mu CH5      mu CH6    beta CH3    beta CH4    beta CH5    beta CH6
+     right arm        -32%*       -20%        -10%*       -29%        -10%*       -15%        -12%        -15% 
+     left arm          -6%         -3%        -16%        -21%        -13%*        -1%        -16%*        +7% 
+     right leg         -5%         +1%         -4%        +44%         -3%        -11%         -9%        -10% 
+
+  B. FIXED TEST: mu, CH5 minus CH6, imagery 1.5 s-STOP vs rest
+     accuracy 23/34 = 68%  (p=0.029, chance 50%)  AUC 0.62  [right arm 71% correct, left arm 65%]
+
+     Other left-minus-right settings (exploratory; expect some to look good by chance):
+     mu   CH3-CH4  vs rest: 53% (AUC 0.51)   vs Get Ready: 50% (AUC 0.57)
+     beta CH3-CH4  vs rest: 56% (AUC 0.55)   vs Get Ready: 44% (AUC 0.49)
+     mu   CH5-CH6  vs rest: 68% (AUC 0.62)   vs Get Ready: 44% (AUC 0.49)
+     beta CH5-CH6  vs rest: 44% (AUC 0.45)   vs Get Ready: 47% (AUC 0.43)
+
+  C. Imagery vs no imagery, beta in all connected channels (chance 50%)
+     imagery 1.5 s-STOP vs rest      : LDA  62% (p=0.025)*
+     imagery 1.5 s-STOP vs Get Ready : LDA  55% (p=0.164) 
+
+  D. Limb classification, mu + beta power during imagery
+     LDA            3 limbs  44% (p=0.244)  (chance 33%)   right vs left arm  60% (p=0.418)  (chance 50%)
+
+  E. Right leg vs arms (mu, imagery vs rest)
+     mean of connected channels: leg +3%, arms +9%, AUC 0.52 (p=0.865)
+     midline minus lateral: AUC 0.53 (p=0.371; >0.5 = leg changes more at the midline)
+
+==============================================================================
+SaraGrip_MI_EEG_20261101_181553
+  51 trials (right arm 17, left arm 17, right leg 17); connected channels: CH3, CH4, CH5, CH6; imagery 6.0 s
+
+  A. Median % change, imagery 1.5 s-STOP vs rest  (* = significant decrease, p<0.05)
+                     mu CH3      mu CH4      mu CH5      mu CH6    beta CH3    beta CH4    beta CH5    beta CH6
+     right arm        +78%        +31%         +1%        +71%         -5%         -8%         +6%         -6% 
+     left arm         +27%         -5%        +10%        -24%        -22%        -23%        -22%*       -35%*
+     right leg        +24%        +33%         -0%        +34%        -32%*       -33%*       -29%*       -24%*
+
+  A. Median % change, imagery 1.5 s-STOP vs Get Ready  (* = significant decrease, p<0.05)
+                     mu CH3      mu CH4      mu CH5      mu CH6    beta CH3    beta CH4    beta CH5    beta CH6
+     right arm         -6%        -14%        -15%        -11%         +0%         -1%         +0%         -2% 
+     left arm         -22%         -9%         -9%        -10%         +7%        +13%        +16%        -13% 
+     right leg        -21%         -5%        -18%         +6%         -4%         -8%        -16%         -0% 
+
+  B. FIXED TEST: mu, CH5 minus CH6, imagery 1.5 s-STOP vs rest
+     accuracy 22/34 = 65%  (p=0.061, chance 50%)  AUC 0.68  [right arm 53% correct, left arm 76%]
+
+     Other left-minus-right settings (exploratory; expect some to look good by chance):
+     mu   CH3-CH4  vs rest: 44% (AUC 0.38)   vs Get Ready: 35% (AUC 0.27)
+     beta CH3-CH4  vs rest: 50% (AUC 0.48)   vs Get Ready: 50% (AUC 0.51)
+     mu   CH5-CH6  vs rest: 65% (AUC 0.68)   vs Get Ready: 47% (AUC 0.44)
+     beta CH5-CH6  vs rest: 53% (AUC 0.49)   vs Get Ready: 65% (AUC 0.65)
+
+  C. Imagery vs no imagery, beta in all connected channels (chance 50%)
+     imagery 1.5 s-STOP vs rest      : LDA  63% (p=0.020)*
+     imagery 1.5 s-STOP vs Get Ready : LDA  47% (p=0.801) 
+
+  D. Limb classification, mu + beta power during imagery
+     LDA            3 limbs  44% (p=0.343)  (chance 33%)   right vs left arm  51% (p=0.537)  (chance 50%)
+
+  E. Right leg vs arms (mu, imagery vs rest)
+     mean of connected channels: leg +23%, arms +13%, AUC 0.47 (p=0.772)
+     midline minus lateral: AUC 0.60 (p=0.129; >0.5 = leg changes more at the midline)
+
+==============================================================================
+Sara5and6Only_MI_EEG_20261109_200920
+  51 trials (right arm 17, left arm 17, right leg 17); connected channels: CH5, CH6; imagery 6.0 s
+
+  A. Median % change, imagery 1.5 s-STOP vs rest  (* = significant decrease, p<0.05)
+                     mu CH5      mu CH6    beta CH5    beta CH6
+     right arm         +1%        +25%        -23%         -6% 
+     left arm          +0%        +59%         -7%         +1% 
+     right leg        +68%       +124%         +9%         -2% 
+
+  A. Median % change, imagery 1.5 s-STOP vs Get Ready  (* = significant decrease, p<0.05)
+                     mu CH5      mu CH6    beta CH5    beta CH6
+     right arm        +10%        +25%         -3%         +3% 
+     left arm          +9%        +21%        -12%         +3% 
+     right leg        +16%        +31%         -7%         -2% 
+
+  B. FIXED TEST: mu, CH5 minus CH6, imagery 1.5 s-STOP vs rest
+     accuracy 16/34 = 47%  (p=0.696, chance 50%)  AUC 0.42  [right arm 65% correct, left arm 29%]
+
+     Other left-minus-right settings (exploratory; expect some to look good by chance):
+     mu   CH5-CH6  vs rest: 47% (AUC 0.42)   vs Get Ready: 62% (AUC 0.60)
+     beta CH5-CH6  vs rest: 50% (AUC 0.55)   vs Get Ready: 53% (AUC 0.42)
+
+  C. Imagery vs no imagery, beta in all connected channels (chance 50%)
+     imagery 1.5 s-STOP vs rest      : LDA  46% (p=0.781) 
+     imagery 1.5 s-STOP vs Get Ready : LDA  54% (p=0.184) 
+
+  D. Limb classification, mu + beta power during imagery
+     LDA            3 limbs  37% (p=0.139)  (chance 33%)   right vs left arm  40% (p=0.786)  (chance 50%)
+
+  E. Right leg vs arms (mu, imagery vs rest)
+     mean of connected channels: leg +98%, arms +17%, AUC 0.62 (p=0.153)
+
+==============================================================================
+ACROSS SESSIONS (4)
+  Fixed test pooled (4 sessions): 80/136 = 59% (p=0.024), AUC 0.58
+  Pooled limb classification on shared channels (CH5, CH6), 204 trials:
+     LDA            3 limbs  46% (p=0.005)*   right vs left arm  65% (p=0.005)*
+  Train on the other sessions, test on the held-out one (LDA, right vs left arm, channels CH5, CH6, chance 50%):
+     mu + beta, imagery             91/136 = 67%  (binomial p=0.000)   per session: 71% 65% 71% 62%
+     mu only, imagery               93/136 = 68%  (binomial p=0.000)   per session: 68% 79% 68% 59%
+     beta only, imagery             71/136 = 52%  (binomial p=0.334)   per session: 56% 47% 56% 50%
+     CONTROL mu + beta, rest        67/136 = 49%  (binomial p=0.601)   per session: 59% 53% 38% 47%
+     CONTROL mu + beta, Get Ready   75/136 = 55%  (binomial p=0.132)   per session: 53% 62% 62% 44%
+     shuffled-label check (mu + beta, imagery): p = 0.005
+     Sessions in order: SaraSession2_10-03-2026, SaraReach3sorted_MI_EEG_20261027_185615, SaraGrip_MI_EEG_20261101_181553, Sara5and6Only_MI_EEG_20261109_200920

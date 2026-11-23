@@ -2,7 +2,7 @@ import csv
 import sys
 import os
 
-input_file = ""
+input_file = "pyth"
 
 if len(sys.argv) < 1:
         print("This script expects a filename.")
