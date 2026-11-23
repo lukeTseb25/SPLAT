@@ -18,7 +18,7 @@ from modules.csv_stream_writer import CSVStreamWriter
 DO_EXTRACTION = False
 DO_TRAIN = True
 DO_EVAL = True
-DO_RANDOM_UNDERSAMPLING = True
+DO_RANDOM_UNDERSAMPLING = False
 UNDERSAMPLING_TARGET = None  # None uses the smallest training-class count
 
 CSV_FILE = os.path.join(RAW_DATA_DIR, "SaraReach3sorted_MI_EEG_20261027_185615.csv")
